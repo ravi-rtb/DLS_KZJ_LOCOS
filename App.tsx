@@ -54,7 +54,7 @@ const App: React.FC = () => {
           <div className="flex items-center space-x-3">
             <TrainIcon className="h-8 w-8 text-brand-accent"/>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-wide">
-              Locomotive Data Hub
+              DIESEL LOCO SHED KAZIPET - Locomotive Data
             </h1>
           </div>
         </div>
@@ -63,7 +63,7 @@ const App: React.FC = () => {
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-3xl mx-auto">
           <p className="text-center text-text-secondary mb-6">
-            Enter a locomotive number below to retrieve its details, schedules, and failure history.
+            Enter a locomotive number below to retrieve its details, schedules, modifications and failure history.
           </p>
           <SearchBar onSearch={handleSearch} isLoading={isLoading} />
         </div>
@@ -105,7 +105,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="text-center py-6 text-text-secondary text-sm">
-        <p>&copy; {new Date().getFullYear()} Loco Data Summary. All data is sourced from public records.</p>
+        <p>&copy; {new Date().getFullYear()} Loco Data Summary. All data is sourced from Tcell-KZJD.</p>
       </footer>
     </div>
   );
