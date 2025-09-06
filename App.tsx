@@ -73,7 +73,7 @@ const App: React.FC = () => {
           {error && !isLoading && <ErrorMessage message={error} />}
           {data && !isLoading && (
             <div className="space-y-8">
-              <LocoDetailsCard details={data.details} />
+              <LocoDetailsCard details={data.details} locoNo={locoNo} />
 
               <div className="bg-bg-card p-6 rounded-lg shadow-lg">
                 <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
