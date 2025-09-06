@@ -1,25 +1,10 @@
 import React from 'react';
 import type { WAG7Modification } from '../types';
 import { TableCellsIcon } from './Icons';
-import { FRIENDLY_LABELS } from '../constants';
 
 interface WAG7ModificationsListProps {
   modifications: WAG7Modification[];
 }
-
-// Function to format keys into readable labels
-const formatLabel = (key: string): string => {
-  if (!key) return '';
-  const lowerKey = key.toLowerCase();
-  
-  // Use the friendly name from constants if available
-  if (FRIENDLY_LABELS[lowerKey]) {
-    return FRIENDLY_LABELS[lowerKey];
-  }
-
-  // Fallback for unknown keys: capitalize the first letter
-  return key.charAt(0).toUpperCase() + key.slice(1);
-};
 
 const WAG7ModificationsList: React.FC<WAG7ModificationsListProps> = ({ modifications }) => {
   if (modifications.length === 0) {
@@ -31,12 +16,17 @@ const WAG7ModificationsList: React.FC<WAG7ModificationsListProps> = ({ modificat
     );
   }
 
+  // Find the key for the loco number once, to exclude it from all modification records.
+  const locoNoKey = modifications.length > 0 
+    ? Object.keys(modifications[0]).find(k => k.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/gi, '') === 'locono')
+    : undefined;
+
   return (
     <div className="space-y-6">
       {modifications.map((mod, index) => {
-        // Filter out locono and any keys with empty values
+        // Filter out the loco number key and any keys with empty values
         const filteredDetails = Object.entries(mod).filter(
-          ([key, value]) => key.toLowerCase() !== 'locono' && value && String(value).trim() !== ''
+          ([key, value]) => key !== locoNoKey && value && String(value).trim() !== ''
         );
 
         return (
@@ -45,7 +35,7 @@ const WAG7ModificationsList: React.FC<WAG7ModificationsListProps> = ({ modificat
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
                 {filteredDetails.map(([key, value]) => (
                   <div key={key}>
-                    <p className="text-xs font-semibold text-text-secondary">{formatLabel(key)}</p>
+                    <p className="text-xs font-semibold text-text-secondary">{key}</p>
                     <p className="text-sm text-text-primary">{String(value)}</p>
                   </div>
                 ))}
