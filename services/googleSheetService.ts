@@ -7,7 +7,7 @@ import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } fro
  * @param jsonString The raw text response from the fetch call.
  * @returns A cleaned array of objects.
  */
-const parseGvizData = <T,>(jsonString: string): T[] => {
+const parseGvizData = <T,>(jsonString: string, normalizeKeys: boolean = true): T[] => {
   const prefix = 'google.visualization.Query.setResponse(';
   
   const startIndex = jsonString.indexOf(prefix);
@@ -29,11 +29,15 @@ const parseGvizData = <T,>(jsonString: string): T[] => {
     return []; // Return empty if the table structure is missing
   }
 
-  // Use column labels as keys, normalizing them to match the expected type format.
-  // This removes spaces, special characters, and converts to lowercase (e.g., "LOCO No." -> "locono").
+
   const cols = table.cols.map((col: { label: string; }) => {
     if (!col || !col.label) return '';
-    return col.label.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/gi, '');
+    if (normalizeKeys) {
+      // Use column labels as keys, normalizing them (e.g., "LOCO No." -> "locono").
+      return col.label.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/gi, '');
+    }
+    // Return the raw, original header from the sheet
+    return col.label;
   });
   
   return table.rows.map((row: { c: ({ v: any; f?: string } | null)[]; }) => {
@@ -59,9 +63,10 @@ const parseGvizData = <T,>(jsonString: string): T[] => {
 /**
  * Fetches data from a specific sheet by its name using the Gviz API.
  * @param sheetName The exact name of the sheet tab to fetch.
+ * @param normalizeKeys Whether to normalize column headers into keys.
  * @returns A promise that resolves to the parsed data from the sheet.
  */
-const fetchSheet = async <T,>(sheetName: string): Promise<T[]> => {
+const fetchSheet = async <T,>(sheetName: string, normalizeKeys: boolean = true): Promise<T[]> => {
     // Use the default Gviz endpoint. The parser is designed to handle its JSONP response.
     const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sheetName)}`;
     const response = await fetch(url);
@@ -71,8 +76,17 @@ const fetchSheet = async <T,>(sheetName: string): Promise<T[]> => {
     }
 
     const text = await response.text();
-    return parseGvizData<T>(text);
+    return parseGvizData<T>(text, normalizeKeys);
 };
+
+// Helper to find the key for 'locono' in an object with arbitrary keys.
+const findLocoNumberKey = (obj: { [key: string]: any }): string | undefined => {
+    if (!obj) return undefined;
+    return Object.keys(obj).find(k => 
+        k.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/gi, '') === 'locono'
+    );
+};
+
 
 /**
  * Fetches and aggregates all required data for a specific locomotive number.
@@ -84,17 +98,31 @@ export const getLocoData = async (locoNo: string) => {
 
   // Fetch all sheets concurrently for better performance
   const [allDetails, allSchedules, allFailures, allWAG7Modifications] = await Promise.all([
-    fetchSheet<LocoDetails>(SHEET_NAMES.Loco_list),
-    fetchSheet<LocoSchedule>(SHEET_NAMES.Loco_Schedules),
-    fetchSheet<TractionFailure>(SHEET_NAMES.Traction_failures),
-    fetchSheet<WAG7Modification>(SHEET_NAMES.WAG7_Modifications),
+    fetchSheet<LocoDetails>(SHEET_NAMES.Loco_list, false), // Keep raw headers
+    fetchSheet<LocoSchedule>(SHEET_NAMES.Loco_Schedules, true), // Normalize for stable keys
+    fetchSheet<TractionFailure>(SHEET_NAMES.Traction_failures, true), // Normalize for stable keys
+    fetchSheet<WAG7Modification>(SHEET_NAMES.WAG7_Modifications, false), // Keep raw headers
   ]);
 
-  // Find the specific loco's data. Note: The Gviz API might return numbers, so we coerce to string for comparison.
-  const details = allDetails.find(d => String(d.locono)?.toUpperCase() === normalizedLocoNo) || null;
+  // Find the key for the loco number in the raw-header details sheet
+  const locoNoKeyDetails = allDetails.length > 0 ? findLocoNumberKey(allDetails[0]) : undefined;
+
+  // Find the specific loco's details using the dynamic key
+  const details = locoNoKeyDetails
+    ? allDetails.find(d => String(d[locoNoKeyDetails])?.toUpperCase() === normalizedLocoNo) || null
+    : null;
+  
+  // Filter schedules and failures using the stable, normalized 'locono' key
   const schedules = allSchedules.filter(s => String(s.locono)?.toUpperCase() === normalizedLocoNo);
   const failures = allFailures.filter(f => String(f.locono)?.toUpperCase() === normalizedLocoNo);
-  const wag7Modifications = allWAG7Modifications.filter(m => String(m.locono)?.toUpperCase() === normalizedLocoNo);
+  
+  // Find the key for the loco number in the raw-header modifications sheet
+  const locoNoKeyMods = allWAG7Modifications.length > 0 ? findLocoNumberKey(allWAG7Modifications[0]) : undefined;
+  
+  // Filter modifications using the dynamic key
+  const wag7Modifications = locoNoKeyMods
+    ? allWAG7Modifications.filter(m => String(m[locoNoKeyMods])?.toUpperCase() === normalizedLocoNo)
+    : [];
 
   return { details, schedules, failures, wag7Modifications };
 };
