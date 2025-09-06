@@ -5,6 +5,7 @@ import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } fro
  * Parses the JSON response from the Google Sheets Gviz API into a clean array of objects.
  * This handles the JSONP wrapper and potential security prefixes.
  * @param jsonString The raw text response from the fetch call.
+ * @param normalizeKeys Whether to convert headers to normalized keys (lowercase, no spaces).
  * @returns A cleaned array of objects.
  */
 const parseGvizData = <T,>(jsonString: string, normalizeKeys: boolean = true): T[] => {
@@ -28,7 +29,6 @@ const parseGvizData = <T,>(jsonString: string, normalizeKeys: boolean = true): T
   if (!table || !table.cols || !table.rows) {
     return []; // Return empty if the table structure is missing
   }
-
 
   const cols = table.cols.map((col: { label: string; }) => {
     if (!col || !col.label) return '';
