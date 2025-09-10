@@ -63,7 +63,7 @@ const App: React.FC = () => {
       <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-3xl mx-auto">
           <p className="text-center text-text-secondary mb-6">
-            Enter a locomotive number below to retrieve its details, schedules, modifications and failure history.
+            Enter a KZJD WAG7 locomotive number below to retrieve its details, schedules, modifications and failure history.
           </p>
           <SearchBar onSearch={handleSearch} isLoading={isLoading} />
         </div>
