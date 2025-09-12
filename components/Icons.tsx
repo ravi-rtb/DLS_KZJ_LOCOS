@@ -53,3 +53,9 @@ export const ClipboardDocumentListIcon: React.FC<IconProps> = ({ className }) =>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 6.45 3.75l-.04.04a2.25 2.25 0 0 0-.994 1.583m-3.467 0c-.055.241-.086.495-.086.756v11.25c0 .621.504 1.125 1.125 1.125H9.093c.318 0 .621-.128.85-.354l2.792-2.792a.75.75 0 0 1 1.06 0l2.792 2.792c.229.228.532.354.85.354h2.478c.621 0 1.125-.504 1.125-1.125V8.25a2.25 2.25 0 0 0-2.25-2.25h-2.25" />
     </svg>
 );
+
+export const ChevronDownIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+    </svg>
+);

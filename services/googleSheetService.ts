@@ -89,6 +89,16 @@ const findLocoNumberKey = (obj: { [key: string]: any }): string | undefined => {
 
 
 /**
+ * Fetches all WAG7 modification data from the sheet.
+ * @returns An array of all modification records.
+ */
+export const getAllWAG7Modifications = async (): Promise<WAG7Modification[]> => {
+  // Keep raw headers (false) because they are the modification names.
+  return fetchSheet<WAG7Modification>(SHEET_NAMES.WAG7_Modifications, false);
+};
+
+
+/**
  * Fetches and aggregates all required data for a specific locomotive number.
  * @param locoNo The locomotive number to search for.
  * @returns An object containing details, schedules, and failures for the given loco.

@@ -9,6 +9,7 @@ import SchedulesTable from './components/SchedulesTable';
 import FailuresTable from './components/FailuresTable';
 import WAG7ModificationsList from './components/WAG7ModificationsList';
 import { TrainIcon, WrenchScrewdriverIcon, CalendarDaysIcon, ClipboardDocumentListIcon } from './components/Icons';
+import ModificationsSummary from './components/ModificationsSummary';
 
 const App: React.FC = () => {
   const [locoNo, setLocoNo] = useState<string>('');
@@ -20,6 +21,7 @@ const App: React.FC = () => {
     failures: TractionFailure[];
     wag7Modifications: WAG7Modification[];
   } | null>(null);
+  const [view, setView] = useState<'search' | 'summary'>('search');
 
   const handleSearch = useCallback(async (searchLocoNo: string) => {
     if (!searchLocoNo.trim()) {
@@ -47,6 +49,64 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const renderSearchView = () => (
+    <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="max-w-3xl mx-auto">
+        <p className="text-center text-text-secondary mb-6">
+          Enter a KZJD WAG7 locomotive number below to retrieve its details, schedules, modifications and failure history.
+        </p>
+        <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+      </div>
+
+      <div className="mt-8">
+        {isLoading && <Loader />}
+        {error && !isLoading && <ErrorMessage message={error} />}
+        {data && !isLoading && (
+          <div className="space-y-8">
+            <LocoDetailsCard details={data.details} locoNo={locoNo} />
+
+            <div className="bg-bg-card p-6 rounded-lg shadow-lg">
+              <h2
+                className="text-xl font-bold text-brand-primary flex items-center mb-4 cursor-pointer hover:text-brand-secondary transition-colors"
+                onClick={() => setView('summary')}
+                title="View summary for all modifications"
+                role="button"
+                aria-label="View WAG7 modifications summary"
+              >
+                <ClipboardDocumentListIcon className="h-6 w-6 mr-3" />
+                WAG7 Modifications
+              </h2>
+              <WAG7ModificationsList modifications={data.wag7Modifications} />
+            </div>
+            
+            <div className="bg-bg-card p-6 rounded-lg shadow-lg">
+              <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
+                <CalendarDaysIcon className="h-6 w-6 mr-3" />
+                Locomotive Schedules
+              </h2>
+              <SchedulesTable schedules={data.schedules} />
+            </div>
+            
+            <div className="bg-bg-card p-6 rounded-lg shadow-lg">
+              <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
+                <WrenchScrewdriverIcon className="h-6 w-6 mr-3" />
+                Online Failures
+              </h2>
+              <FailuresTable failures={data.failures} />
+            </div>
+
+          </div>
+        )}
+      </div>
+    </main>
+  );
+
+  const renderSummaryView = () => (
+    <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <ModificationsSummary onBack={() => setView('search')} />
+    </main>
+ );
+
   return (
     <div className="min-h-screen font-sans text-text-primary">
       <header className="bg-brand-primary shadow-md">
@@ -60,49 +120,7 @@ const App: React.FC = () => {
         </div>
       </header>
       
-      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="max-w-3xl mx-auto">
-          <p className="text-center text-text-secondary mb-6">
-            Enter a KZJD WAG7 locomotive number below to retrieve its details, schedules, modifications and failure history.
-          </p>
-          <SearchBar onSearch={handleSearch} isLoading={isLoading} />
-        </div>
-
-        <div className="mt-8">
-          {isLoading && <Loader />}
-          {error && !isLoading && <ErrorMessage message={error} />}
-          {data && !isLoading && (
-            <div className="space-y-8">
-              <LocoDetailsCard details={data.details} locoNo={locoNo} />
-
-              <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-                <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
-                  <ClipboardDocumentListIcon className="h-6 w-6 mr-3" />
-                  WAG7 Modifications
-                </h2>
-                <WAG7ModificationsList modifications={data.wag7Modifications} />
-              </div>
-              
-              <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-                <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
-                  <CalendarDaysIcon className="h-6 w-6 mr-3" />
-                  Locomotive Schedules
-                </h2>
-                <SchedulesTable schedules={data.schedules} />
-              </div>
-              
-              <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-                <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
-                  <WrenchScrewdriverIcon className="h-6 w-6 mr-3" />
-                  Online Failures
-                </h2>
-                <FailuresTable failures={data.failures} />
-              </div>
-
-            </div>
-          )}
-        </div>
-      </main>
+      {view === 'search' ? renderSearchView() : renderSummaryView()}
 
       <footer className="text-center py-6 text-text-secondary text-sm">
         <p>&copy; {new Date().getFullYear()} Loco Data Summary. All data is sourced from Tcell-KZJD.</p>
