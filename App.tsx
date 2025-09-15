@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } from './types';
-import { getLocoData } from './services/googleSheetService';
+import { getLocoData, getAllLocoNumbers } from './services/googleSheetService';
 import SearchBar from './components/SearchBar';
 import Loader from './components/Loader';
 import ErrorMessage from './components/ErrorMessage';
@@ -22,6 +22,19 @@ const App: React.FC = () => {
     wag7Modifications: WAG7Modification[];
   } | null>(null);
   const [view, setView] = useState<'search' | 'summary'>('search');
+  const [allLocoNumbers, setAllLocoNumbers] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchLocoNumbers = async () => {
+      try {
+        const numbers = await getAllLocoNumbers();
+        setAllLocoNumbers(numbers);
+      } catch (err) {
+        console.error("Failed to fetch loco numbers for suggestions:", err);
+      }
+    };
+    fetchLocoNumbers();
+  }, []);
 
   const handleSearch = useCallback(async (searchLocoNo: string) => {
     if (!searchLocoNo.trim()) {
@@ -55,7 +68,7 @@ const App: React.FC = () => {
         <p className="text-center text-text-secondary mb-6">
           Enter a KZJD WAG7 locomotive number below to retrieve its details, schedules, modifications and failure history.
         </p>
-        <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+        <SearchBar onSearch={handleSearch} isLoading={isLoading} suggestions={allLocoNumbers} />
       </div>
 
       <div className="mt-8">

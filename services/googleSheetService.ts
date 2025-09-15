@@ -87,6 +87,27 @@ const findLocoNumberKey = (obj: { [key: string]: any }): string | undefined => {
     );
 };
 
+/**
+ * Fetches all locomotive numbers from the Loco_list sheet.
+ * @returns An array of all locomotive numbers as strings.
+ */
+export const getAllLocoNumbers = async (): Promise<string[]> => {
+  const allDetails = await fetchSheet<LocoDetails>(SHEET_NAMES.Loco_list, false); // Keep raw headers
+  if (allDetails.length === 0) {
+    return [];
+  }
+  
+  const locoNoKey = findLocoNumberKey(allDetails[0]);
+  if (!locoNoKey) {
+    console.warn("Could not find 'Loco Number' column in the Loco_list sheet.");
+    return [];
+  }
+
+  return allDetails
+    .map(loco => String(loco[locoNoKey] || '').trim())
+    .filter(locoNo => locoNo !== '');
+};
+
 
 /**
  * Fetches all WAG7 modification data from the sheet.
