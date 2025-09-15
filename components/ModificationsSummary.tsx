@@ -117,10 +117,15 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
             }))
             .filter(loco => loco.locoNo); // Ensure loco has a number
 
-          // Define which mods require special V3 filtering
-          const isV3Mod = trimmedModName.toUpperCase().includes('MPCS V3') || trimmedModName.toUpperCase() === 'LSIP';
+          // Define special conditions
+          const upperTrimmedModName = trimmedModName.toUpperCase();
+          const isCabAcMod = upperTrimmedModName === 'CAB AC';
+          const isV3Mod = upperTrimmedModName.includes('MPCS V3') || upperTrimmedModName === 'LSIP';
 
-          if (isV3Mod) {
+          if (isCabAcMod) {
+            // New rule for CAB AC: count and list only if status contains 'Working'
+            completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('WORKING'));
+          } else if (isV3Mod) {
             // Special rule: count and list only if status contains 'V3'
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('V3'));
           } else {
