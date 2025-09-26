@@ -19,7 +19,9 @@ export interface TractionFailure {
   briefmessage: string;
   causeoffailure: string;
   component: string;
-  system: string;
+  equipment: string;
+  responsibility: string;
+  elocosaf: string;
   [key: string]: string;
 }
 

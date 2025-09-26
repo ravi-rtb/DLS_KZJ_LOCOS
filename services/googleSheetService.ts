@@ -120,6 +120,15 @@ export const getAllWAG7Modifications = async (): Promise<WAG7Modification[]> => 
 
 
 /**
+ * Fetches all traction failure data from the sheet.
+ * @returns An array of all failure records.
+ */
+export const getAllFailures = async (): Promise<TractionFailure[]> => {
+  return fetchSheet<TractionFailure>(SHEET_NAMES.Traction_failures, true); // Normalize keys
+};
+
+
+/**
  * Fetches and aggregates all required data for a specific locomotive number.
  * @param locoNo The locomotive number to search for.
  * @returns An object containing details, schedules, and failures for the given loco.

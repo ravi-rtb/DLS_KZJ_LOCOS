@@ -10,8 +10,10 @@ import FailuresTable from './components/FailuresTable';
 import WAG7ModificationsList from './components/WAG7ModificationsList';
 import { TrainIcon, WrenchScrewdriverIcon, CalendarDaysIcon, ClipboardDocumentListIcon } from './components/Icons';
 import ModificationsSummary from './components/ModificationsSummary';
+import FailuresSummary from './components/FailuresSummary';
 
-const App: React.FC = () => {
+// FIX: Removed React.FC type annotation to fix incorrect type inference by the compiler.
+const App = () => {
   const [locoNo, setLocoNo] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ const App: React.FC = () => {
     failures: TractionFailure[];
     wag7Modifications: WAG7Modification[];
   } | null>(null);
-  const [view, setView] = useState<'search' | 'summary'>('search');
+  const [view, setView] = useState<'search' | 'summary' | 'failuresSummary'>('search');
   const [allLocoNumbers, setAllLocoNumbers] = useState<string[]>([]);
 
   useEffect(() => {
@@ -101,7 +103,13 @@ const App: React.FC = () => {
             </div>
             
             <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
+              <h2
+                className="text-xl font-bold text-brand-primary flex items-center mb-4 cursor-pointer hover:text-brand-secondary transition-colors"
+                onClick={() => setView('failuresSummary')}
+                title="View summary for all failures"
+                role="button"
+                aria-label="View failures summary"
+              >
                 <WrenchScrewdriverIcon className="h-6 w-6 mr-3" />
                 Online Failures
               </h2>
@@ -118,7 +126,13 @@ const App: React.FC = () => {
     <main className="container mx-auto p-4 sm:p-6 lg:p-8">
       <ModificationsSummary onBack={() => setView('search')} />
     </main>
- );
+  );
+  
+  const renderFailuresSummaryView = () => (
+    <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <FailuresSummary onBack={() => setView('search')} />
+    </main>
+  );
 
   return (
     <div className="min-h-screen font-sans text-text-primary">
@@ -133,7 +147,10 @@ const App: React.FC = () => {
         </div>
       </header>
       
-      {view === 'search' ? renderSearchView() : renderSummaryView()}
+      {view === 'search' && renderSearchView()}
+      {view === 'summary' && renderSummaryView()}
+      {view === 'failuresSummary' && renderFailuresSummaryView()}
+
 
       <footer className="text-center py-6 text-text-secondary text-sm">
         <p>&copy; {new Date().getFullYear()} Loco Data Summary. All data is sourced from Tcell-KZJD.</p>
