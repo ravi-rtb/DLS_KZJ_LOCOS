@@ -280,7 +280,7 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
             summaryB_yOth: processSummary(fyFailures, fy, 'Others', 'Equipment', f => f.elocosaf?.toUpperCase().includes('Y-OTH'), 'equipment'),
             summaryC_main: processSummary(fyFailures, fy, 'Loco Account', 'Equipment', f => f.icmsmessage?.toUpperCase() === 'MESSAGE' && f.responsibility?.toUpperCase() !== 'OTH', 'equipment'),
             summaryC_oth: processSummary(fyFailures, fy, 'Others', 'Equipment', f => f.icmsmessage?.toUpperCase() === 'MESSAGE' && f.responsibility?.toUpperCase() === 'OTH', 'equipment'),
-            summaryD: processSummary(fyFailures, fy, 'Responsibility Summary', 'Responsibility', () => true, 'responsibility'),
+            summaryD: processSummary(fyFailures, fy, 'Responsibility Summary', 'Section Code', () => true, 'responsibility'),
         }
     }
     return result;
