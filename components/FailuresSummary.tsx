@@ -276,8 +276,8 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
         result[fy] = {
             summaryA_main: processSummary(fyFailures, fy, 'Loco Account', 'Equipment', f => f.icmsmessage?.toUpperCase() !== 'MESSAGE' && f.responsibility?.toUpperCase() !== 'OTH', 'equipment'),
             summaryA_oth: processSummary(fyFailures, fy, 'Others', 'Equipment', f => f.icmsmessage?.toUpperCase() !== 'MESSAGE' && f.responsibility?.toUpperCase() === 'OTH', 'equipment'),
-            summaryB_yLoco: processSummary(fyFailures, fy, 'Y-Loco', 'Equipment', f => f.elocosaf?.toUpperCase().includes('Y-LOCO'), 'equipment'),
-            summaryB_yOth: processSummary(fyFailures, fy, 'Y-Oth', 'Equipment', f => f.elocosaf?.toUpperCase().includes('Y-OTH'), 'equipment'),
+            summaryB_yLoco: processSummary(fyFailures, fy, 'Loco Account', 'Equipment', f => f.elocosaf?.toUpperCase().includes('Y-LOCO'), 'equipment'),
+            summaryB_yOth: processSummary(fyFailures, fy, 'Others', 'Equipment', f => f.elocosaf?.toUpperCase().includes('Y-OTH'), 'equipment'),
             summaryC_main: processSummary(fyFailures, fy, 'Loco Account', 'Equipment', f => f.icmsmessage?.toUpperCase() === 'MESSAGE' && f.responsibility?.toUpperCase() !== 'OTH', 'equipment'),
             summaryC_oth: processSummary(fyFailures, fy, 'Others', 'Equipment', f => f.icmsmessage?.toUpperCase() === 'MESSAGE' && f.responsibility?.toUpperCase() === 'OTH', 'equipment'),
             summaryD: processSummary(fyFailures, fy, 'Responsibility Summary', 'Responsibility', () => true, 'responsibility'),
