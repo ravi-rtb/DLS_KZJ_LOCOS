@@ -170,7 +170,7 @@ const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: Tracti
         </tbody>
         <tfoot className="bg-gray-100 font-bold">
             <tr>
-                <td className="px-3 py-2 sticky left-0 bg-gray-100">Grand Total</td>
+                <td className="px-3 py-2 sticky left-0 bg-gray-100 text-text-primary">Grand Total</td>
                 {data.totals.monthlyData.map((cell, i) => (
                     <td key={i} className="px-3 py-2 text-center">
                         {cell.count > 0 ? (
@@ -280,7 +280,8 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
             summaryB_yOth: processSummary(fyFailures, fy, 'Others', 'Equipment', f => f.elocosaf?.toUpperCase().includes('Y-OTH'), 'equipment'),
             summaryC_main: processSummary(fyFailures, fy, 'Loco Account', 'Equipment', f => f.icmsmessage?.toUpperCase() === 'MESSAGE' && f.responsibility?.toUpperCase() !== 'OTH', 'equipment'),
             summaryC_oth: processSummary(fyFailures, fy, 'Others', 'Equipment', f => f.icmsmessage?.toUpperCase() === 'MESSAGE' && f.responsibility?.toUpperCase() === 'OTH', 'equipment'),
-            summaryD: processSummary(fyFailures, fy, 'Responsibility Summary', 'Section Code', () => true, 'responsibility'),
+            summaryD: processSummary(fyFailures, fy, 'Section Summary', 'Section Code', () => true, 'responsibility'),
+            summaryE_punc: processSummary(fyFailures, fy, 'Loco Account', 'Equipment', f => !!f.elocosaf?.toUpperCase().includes('PUNC'), 'equipment'),
         }
     }
     return result;
@@ -375,6 +376,16 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
                      <div className="space-y-4">
                         <SummaryTable data={processedData[fy].summaryB_yLoco} onCellClick={setModalFailures} />
                         <SummaryTable data={processedData[fy].summaryB_yOth} onCellClick={setModalFailures} />
+                    </div>
+                  </CollapsibleSummarySection>
+
+                  <CollapsibleSummarySection 
+                    title="Punctuality - As per eLocos"
+                    isExpanded={expandedSummaries[fy]?.has('e')}
+                    onToggle={() => toggleSummary(fy, 'e')}
+                  >
+                     <div className="space-y-4">
+                        <SummaryTable data={processedData[fy].summaryE_punc} onCellClick={setModalFailures} />
                     </div>
                   </CollapsibleSummarySection>
 
