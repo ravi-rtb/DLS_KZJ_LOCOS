@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getAllFailures } from '../services/googleSheetService';
+import { getAllFailures, parseDateDDMMYY } from '../services/googleSheetService';
 import type { TractionFailure } from '../types';
 import Loader from './Loader';
 import ErrorMessage from './ErrorMessage';
@@ -15,39 +15,6 @@ type SummaryRow = { name: string; monthlyData: MonthlyCell[]; total: MonthlyCell
 type SummaryData = { title: string; groupTitle: string; headers: string[]; rows: SummaryRow[]; totals: Omit<SummaryRow, 'name'> };
 
 // --- Helper Functions ---
-
-/**
- * Parses a date string in 'dd-mm-yy' or 'dd-mm-yyyy' format.
- * @param dateString The date string from the sheet.
- * @returns A Date object or null if the format is invalid.
- */
-const parseDateDDMMYY = (dateString: string): Date | null => {
-  if (!dateString || typeof dateString !== 'string') return null;
-  const parts = dateString.split(/[-/]/);
-  if (parts.length !== 3) return null;
-
-  const day = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
-  let year = parseInt(parts[2], 10);
-
-  if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
-
-  // Handle 2-digit years, assuming they are in the 21st century.
-  if (year < 100) {
-    year += 2000;
-  }
-  
-  // Use UTC to prevent timezone-related issues.
-  const date = new Date(Date.UTC(year, month, day));
-
-  // Validate the created date to ensure components weren't rolled over (e.g., month 13).
-  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day) {
-    return null;
-  }
-
-  return date;
-};
-
 
 const getFinancialYear = (date: Date): string => {
   const year = date.getUTCFullYear();

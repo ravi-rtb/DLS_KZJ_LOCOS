@@ -42,7 +42,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">ICMS/Message<br />Division<br />Railway</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Brief Message</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Cause of Failure</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Component<br />Equipment</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Equipment<br />Component</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Responsibility</th>
                 </tr>
               </thead>
@@ -60,7 +60,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                     <td className="p-2 align-top text-text-primary whitespace-normal min-w-[150px]">{failure.briefmessage}</td>
                     <td className="p-2 align-top text-text-primary whitespace-normal min-w-[150px]">{failure.causeoffailure}</td>
                     <td className="p-2 align-top text-text-primary whitespace-nowrap">
-                      {failure.component || ''}{failure.equipment ? `-${failure.equipment}` : ''}
+                      {failure.equipment || ''}{failure.component ? ` - ${failure.component}` : ''}
                     </td>
                      <td className="p-2 align-top text-text-primary whitespace-nowrap">{failure.responsibility}</td>
                   </tr>
