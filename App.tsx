@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } from './types';
 import { getLocoData, getAllLocoNumbers } from './services/googleSheetService';
 import { DOCUMENTS_URL } from './constants';
@@ -73,94 +73,120 @@ const App = () => {
     }
   }, []);
 
-  const renderHomePage = () => (
-    <main className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto">
-        <p className="text-center text-text-secondary mb-6">
-          Search for a KZJD WAG7 locomotive number or explore the summary reports.
-        </p>
-        <SearchBar onSearch={handleSearch} isLoading={isLoading} suggestions={allLocoNumbers} />
+  const renderHomePage = () => {
+    const failureCounts = useMemo(() => {
+      if (!data?.failures) {
+        return null;
+      }
+      return data.failures.reduce(
+        (counts, failure) => {
+          if (failure.icmsmessage && typeof failure.icmsmessage === 'string' && failure.icmsmessage.trim().toUpperCase().startsWith('E')) {
+            counts.icmsCount++;
+          } else {
+            counts.messageCount++;
+          }
+          return counts;
+        },
+        { icmsCount: 0, messageCount: 0 }
+      );
+    }, [data?.failures]);
+    
+    return (
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-center text-text-secondary mb-6">
+            Search for a KZJD WAG7 locomotive number or explore the summary reports.
+          </p>
+          <SearchBar onSearch={handleSearch} isLoading={isLoading} suggestions={allLocoNumbers} />
 
-        {/* Navigation Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
-          <div 
-            onClick={() => setView('summary')} 
-            className="bg-bg-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col items-center text-center"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setView('summary')}
-            aria-label="View WAG7 modifications summary"
-          >
-            <ClipboardDocumentListIcon className="h-12 w-12 text-brand-primary mb-4" />
-            <h3 className="text-lg font-bold text-text-primary mb-2">Modifications Summary</h3>
-            <p className="text-sm text-text-secondary">View a summary of all WAG7 modifications across the fleet.</p>
+          {/* Navigation Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+            <div 
+              onClick={() => setView('summary')} 
+              className="bg-bg-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col items-center text-center"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setView('summary')}
+              aria-label="View WAG7 modifications summary"
+            >
+              <ClipboardDocumentListIcon className="h-12 w-12 text-brand-primary mb-4" />
+              <h3 className="text-lg font-bold text-text-primary mb-2">Modifications Summary</h3>
+              <p className="text-sm text-text-secondary">View a summary of all WAG7 modifications across the fleet.</p>
+            </div>
+            <div 
+              onClick={() => setView('failuresSummary')} 
+              className="bg-bg-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col items-center text-center"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setView('failuresSummary')}
+              aria-label="View failures summary"
+            >
+              <WrenchScrewdriverIcon className="h-12 w-12 text-brand-primary mb-4" />
+              <h3 className="text-lg font-bold text-text-primary mb-2">Failures Summary</h3>
+              <p className="text-sm text-text-secondary">Explore an interactive, yearly breakdown of loco failures.</p>
+            </div>
+            <a 
+              href={DOCUMENTS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-bg-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col items-center text-center"
+              aria-label="Open documents folder"
+            >
+              <FolderIcon className="h-12 w-12 text-brand-primary mb-4" />
+              <h3 className="text-lg font-bold text-text-primary mb-2">Documents</h3>
+              <p className="text-sm text-text-secondary">Access technical documents, reports, and manuals in Google Drive.</p>
+            </a>
           </div>
-          <div 
-            onClick={() => setView('failuresSummary')} 
-            className="bg-bg-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col items-center text-center"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setView('failuresSummary')}
-            aria-label="View failures summary"
-          >
-            <WrenchScrewdriverIcon className="h-12 w-12 text-brand-primary mb-4" />
-            <h3 className="text-lg font-bold text-text-primary mb-2">Failures Summary</h3>
-            <p className="text-sm text-text-secondary">Explore an interactive, yearly breakdown of loco failures.</p>
-          </div>
-          <a 
-            href={DOCUMENTS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-bg-card p-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col items-center text-center"
-            aria-label="Open documents folder"
-          >
-            <FolderIcon className="h-12 w-12 text-brand-primary mb-4" />
-            <h3 className="text-lg font-bold text-text-primary mb-2">Documents</h3>
-            <p className="text-sm text-text-secondary">Access technical documents, reports, and manuals in Google Drive.</p>
-          </a>
         </div>
-      </div>
 
-      <div className="mt-8 max-w-4xl mx-auto">
-        {isLoading && <Loader />}
-        {error && !isLoading && <ErrorMessage message={error} />}
-        {data && !isLoading && (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-center text-brand-primary border-b pb-2">
-              Showing Results for Loco #{locoNo}
-            </h2>
-
-            <LocoDetailsCard details={data.details} locoNo={locoNo} />
-
-            <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
-                <ClipboardDocumentListIcon className="h-6 w-6 mr-3" />
-                WAG7 Modifications
+        <div className="mt-8 max-w-4xl mx-auto">
+          {isLoading && <Loader />}
+          {error && !isLoading && <ErrorMessage message={error} />}
+          {data && !isLoading && (
+            <div className="space-y-8">
+              <h2 className="text-2xl font-bold text-center text-brand-primary border-b pb-2">
+                Showing Results for Loco #{locoNo}
               </h2>
-              <WAG7ModificationsList modifications={data.wag7Modifications} />
-            </div>
-            
-            <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
-                <CalendarDaysIcon className="h-6 w-6 mr-3" />
-                Locomotive Schedules
-              </h2>
-              <SchedulesTable schedules={data.schedules} />
-            </div>
-            
-            <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
-                <WrenchScrewdriverIcon className="h-6 w-6 mr-3" />
-                Online Failures
-              </h2>
-              <FailuresTable failures={data.failures} />
-            </div>
 
-          </div>
-        )}
-      </div>
-    </main>
-  );
+              <LocoDetailsCard details={data.details} locoNo={locoNo} />
+
+              <div className="bg-bg-card p-6 rounded-lg shadow-lg">
+                <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
+                  <ClipboardDocumentListIcon className="h-6 w-6 mr-3" />
+                  WAG7 Modifications for Loco #{locoNo}
+                </h2>
+                <WAG7ModificationsList modifications={data.wag7Modifications} />
+              </div>
+              
+              <div className="bg-bg-card p-6 rounded-lg shadow-lg">
+                <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
+                  <CalendarDaysIcon className="h-6 w-6 mr-3" />
+                  Locomotive Schedules for Loco #{locoNo}
+                </h2>
+                <SchedulesTable schedules={data.schedules} />
+              </div>
+              
+              <div className="bg-bg-card p-6 rounded-lg shadow-lg">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-brand-primary flex items-center">
+                    <WrenchScrewdriverIcon className="h-6 w-6 mr-3" />
+                    Online Failures for Loco #{locoNo}
+                  </h2>
+                  {failureCounts && (data.failures.length > 0) && (
+                    <span className="text-sm font-semibold text-text-secondary bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
+                      ICMS - {failureCounts.icmsCount}, Messages - {failureCounts.messageCount}
+                    </span>
+                  )}
+                </div>
+                <FailuresTable failures={data.failures} />
+              </div>
+
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
 
   const renderSummaryView = () => (
     <main className="container mx-auto p-4 sm:p-6 lg:p-8">

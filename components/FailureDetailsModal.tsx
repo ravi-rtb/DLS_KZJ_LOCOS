@@ -58,8 +58,8 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Date Failed</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Loco No. +MU With</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">ICMS/Message<br />Division<br />Railway</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/6">Brief Message</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-5/12">Cause of Failure</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Brief Message</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-6/12">Cause of Failure</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Equipment<br />Component</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Responsibility</th>
                 </tr>
@@ -67,11 +67,11 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
               <tbody className="divide-y divide-gray-200">
                 {failures.map((failure, index) => (
                   <tr key={index} className="hover:bg-gray-50">
-                    <td className="p-2 align-top text-text-primary whitespace-nowrap">{failure.datefailed}</td>
-                    <td className="p-2 align-top text-text-primary whitespace-nowrap">
+                    <td className="p-2 align-top text-text-primary whitespace-normal break-words">{failure.datefailed}</td>
+                    <td className="p-2 align-top text-text-primary whitespace-normal break-words">
                       <span className="font-bold">{failure.locono}</span> {failure.muwith ? `+ ${failure.muwith}` : ''}
                     </td>
-                    <td className="p-2 align-top text-text-primary whitespace-nowrap">
+                    <td className="p-2 align-top text-text-primary whitespace-normal break-words">
                       {failure.icmsmessage && <p>{failure.icmsmessage}</p>}
                       {(failure.div || failure.rly) && <p>{failure.div}/{failure.rly}</p>}
                     </td>

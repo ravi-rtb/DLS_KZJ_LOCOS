@@ -65,23 +65,23 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures }) => {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full">
+      <table className="min-w-full w-full table-fixed">
         <thead className="bg-gray-50">
           <tr>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">
               <button onClick={() => requestSort('datefailed')} className="flex items-center gap-1 transition-colors hover:text-text-primary">
                 Date Failed {getSortIcon('datefailed')}
               </button>
             </th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Loco No. +MU With</th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">Loco No. +MU With</th>
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">
               <button onClick={() => requestSort('icmsmessage')} className="flex items-center gap-1 text-left transition-colors hover:text-text-primary">
                 <span>ICMS/Message<br />Division<br />Railway</span> {getSortIcon('icmsmessage')}
               </button>
             </th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Brief Message</th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Cause of Failure</th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[20%]">Brief Message</th>
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[35%]">Cause of Failure</th>
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[15%]">
               <button onClick={() => requestSort('equipment')} className="flex items-center gap-1 text-left transition-colors hover:text-text-primary">
                 <span>Equipment<br />Component</span> {getSortIcon('equipment')}
               </button>
@@ -91,17 +91,17 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures }) => {
         <tbody>
           {sortedFailures.map((failure, index) => (
             <tr key={index} className="border-b border-gray-200 hover:bg-gray-50">
-              <td className="p-3 align-top text-sm text-text-primary whitespace-nowrap">{failure.datefailed}</td>
-              <td className="p-3 align-top text-sm text-text-primary whitespace-nowrap">
+              <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">{failure.datefailed}</td>
+              <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">
                 <span className="font-bold">{failure.locono}</span> {failure.muwith ? `+ ${failure.muwith}` : ''}
               </td>
-              <td className="p-3 align-top text-sm text-text-primary whitespace-nowrap">
+              <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">
                 {failure.icmsmessage && <p>{failure.icmsmessage}</p>}
                 {(failure.div || failure.rly) && <p>{failure.div}/{failure.rly}</p>}
               </td>
-              <td className="p-3 align-top text-sm text-text-primary whitespace-normal min-w-[200px]">{failure.briefmessage}</td>
-              <td className="p-3 align-top text-sm text-text-primary whitespace-normal min-w-[200px]">{failure.causeoffailure}</td>
-              <td className="p-3 align-top text-sm text-text-primary whitespace-nowrap">
+              <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">{failure.briefmessage}</td>
+              <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">{failure.causeoffailure}</td>
+              <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">
                 {failure.equipment || ''}{failure.component ? ` - ${failure.component}` : ''}
               </td>
             </tr>
