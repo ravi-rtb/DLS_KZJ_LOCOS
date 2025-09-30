@@ -136,7 +136,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen font-sans text-text-primary">
-      <header className="bg-brand-primary shadow-md">
+      <header className="bg-brand-primary shadow-md print:hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <TrainIcon className="h-8 w-8 text-brand-accent"/>
@@ -152,7 +152,7 @@ const App = () => {
       {view === 'failuresSummary' && renderFailuresSummaryView()}
 
 
-      <footer className="text-center py-6 text-text-secondary text-sm">
+      <footer className="text-center py-6 text-text-secondary text-sm print:hidden">
         <p>&copy; {new Date().getFullYear()} Loco Data Summary. All data is sourced from Tcell-KZJD.</p>
       </footer>
     </div>

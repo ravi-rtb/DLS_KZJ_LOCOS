@@ -4,7 +4,7 @@ import type { TractionFailure } from '../types';
 import Loader from './Loader';
 import ErrorMessage from './ErrorMessage';
 import FailureDetailsModal from './FailureDetailsModal';
-import { ChevronDownIcon, ClipboardDocumentListIcon } from './Icons';
+import { ChevronDownIcon, ChevronUpIcon, ClipboardDocumentListIcon } from './Icons';
 
 interface FailuresSummaryProps {
   onBack: () => void;
@@ -51,6 +51,7 @@ const sumSummaryTotals = (
 
   const combinedTotal: MonthlyCell = {
     count: t1.total.count + t2.total.count,
+    // FIX: `otherCell` is not in scope here. Use `t2.total.items` instead.
     items: [...t1.total.items, ...t2.total.items],
   };
 
@@ -126,6 +127,56 @@ const processSummary = (
 // --- Sub-Components ---
 
 const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: TractionFailure[]) => void }> = ({ data, onCellClick }) => {
+    const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
+
+    const sortedRows = useMemo(() => {
+        let sortableItems = [...data.rows];
+        if (sortConfig.key) {
+            sortableItems.sort((a, b) => {
+                let valA, valB;
+                if (sortConfig.key === 'name') {
+                    valA = a.name.toLowerCase();
+                    valB = b.name.toLowerCase();
+                } else if (sortConfig.key === 'total') {
+                    valA = a.total.count;
+                    valB = b.total.count;
+                } else { // Monthly data sort
+                    const monthIndex = data.headers.indexOf(sortConfig.key);
+                    if(monthIndex > -1){
+                        valA = a.monthlyData[monthIndex].count;
+                        valB = b.monthlyData[monthIndex].count;
+                    } else {
+                        return 0; // Should not happen
+                    }
+                }
+
+                if (valA < valB) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (valA > valB) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [data.rows, data.headers, sortConfig]);
+
+    const requestSort = (key: string) => {
+        let direction: 'ascending' | 'descending' = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIcon = (key: string) => {
+        if (sortConfig.key !== key) return null;
+        return sortConfig.direction === 'ascending' 
+          ? <ChevronUpIcon className="h-4 w-4 inline-block ml-1 text-text-primary" /> 
+          : <ChevronDownIcon className="h-4 w-4 inline-block ml-1 text-text-primary" />;
+    };
+
     if (!data || data.rows.length === 0) {
         return <p className="text-sm text-text-secondary px-3 py-2">No data available for this summary.</p>;
     }
@@ -138,13 +189,27 @@ const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: Tracti
              <th colSpan={14} className="px-3 py-2 text-left font-semibold text-text-primary bg-gray-200">{data.title}</th>
           </tr>
           <tr>
-            <th className="px-3 py-2 text-left font-semibold text-text-secondary sticky left-0 bg-gray-100">{data.groupTitle}</th>
-            {data.headers.map(h => <th key={h} className="px-3 py-2 font-semibold text-text-secondary w-20">{h}</th>)}
-            <th className="px-3 py-2 font-semibold text-text-secondary w-24">Total</th>
+            <th className="px-3 py-2 text-left font-semibold text-text-secondary sticky left-0 bg-gray-100">
+                <button onClick={() => requestSort('name')} className="flex items-center gap-1 transition-colors hover:text-text-primary">
+                    {data.groupTitle}{getSortIcon('name')}
+                </button>
+            </th>
+            {data.headers.map(h => 
+                <th key={h} className="px-3 py-2 font-semibold text-text-secondary w-20">
+                    <button onClick={() => requestSort(h)} className="transition-colors hover:text-text-primary">
+                        {h}{getSortIcon(h)}
+                    </button>
+                </th>
+            )}
+            <th className="px-3 py-2 font-semibold text-text-secondary w-24">
+                <button onClick={() => requestSort('total')} className="transition-colors hover:text-text-primary">
+                    Total{getSortIcon('total')}
+                </button>
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {data.rows.map(row => (
+          {sortedRows.map(row => (
             <tr key={row.name}>
               <td className="px-3 py-2 font-medium text-text-primary whitespace-nowrap sticky left-0 bg-white">{row.name}</td>
               {row.monthlyData.map((cell, i) => (
@@ -360,10 +425,10 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
   const financialYears = Object.keys(processedData).filter(fy => fy >= '2024-25').sort().reverse();
 
   return (
-    <div className="bg-bg-card p-6 rounded-lg shadow-lg">
+    <div className="bg-bg-card p-6 rounded-lg shadow-lg print:p-0 print:shadow-none print:border-none">
         {modalFailures && <FailureDetailsModal failures={modalFailures} onClose={() => setModalFailures(null)} />}
 
-      <div className="flex justify-between items-center mb-4 border-b pb-4">
+      <div className="flex justify-between items-center mb-4 border-b pb-4 print:hidden">
         <h2 className="text-xl font-bold text-brand-primary flex items-center">
           <ClipboardDocumentListIcon className="h-6 w-6 mr-3"/>
           Loco Failures Summary
@@ -377,9 +442,9 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
       </div>
       
       {financialYears.length === 0 ? (
-        <p>No failure data found for FY 2024-25 or later to generate summaries.</p>
+        <p className="print:hidden">No failure data found for FY 2024-25 or later to generate summaries.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 print:hidden">
           {financialYears.map(fy => (
             <div key={fy} className="border rounded-lg">
               <h3 
