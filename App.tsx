@@ -188,7 +188,7 @@ const App = () => {
           >
             <TrainIcon className="h-12 w-12 text-white" />
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-wide">
-              DIESEL LOCO SHED KAZIPET - Locomotive Data
+              DIESEL LOCO SHED - KAZIPET
             </h1>
           </div>
         </div>
