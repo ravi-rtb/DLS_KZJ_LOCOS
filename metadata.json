@@ -1,5 +1,5 @@
 {
-  "name": "Diesel Loco Shed - Loco Data",
+  "name": "Diesel Loco Shed - Loco Data Summary",
   "description": "An application to search and display summary data for locomotives from a public Google Sheet. It provides details, schedules, and failure reports for any given locomotive number.",
   "requestFramePermissions": []
 }

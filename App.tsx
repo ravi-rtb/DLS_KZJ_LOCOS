@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } from './types';
 import { getLocoData, getAllLocoNumbers } from './services/googleSheetService';
@@ -135,7 +136,7 @@ const App = () => {
             <div className="bg-bg-card p-6 rounded-lg shadow-lg">
               <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
                 <ClipboardDocumentListIcon className="h-6 w-6 mr-3" />
-                WAG7 Modifications
+                WAG7 Modifications for #{locoNo}
               </h2>
               <WAG7ModificationsList modifications={data.wag7Modifications} />
             </div>
@@ -143,7 +144,7 @@ const App = () => {
             <div className="bg-bg-card p-6 rounded-lg shadow-lg">
               <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
                 <CalendarDaysIcon className="h-6 w-6 mr-3" />
-                Locomotive Schedules
+                Locomotive Schedules for #{locoNo}
               </h2>
               <SchedulesTable schedules={data.schedules} />
             </div>
@@ -151,7 +152,7 @@ const App = () => {
             <div className="bg-bg-card p-6 rounded-lg shadow-lg">
               <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
                 <WrenchScrewdriverIcon className="h-6 w-6 mr-3" />
-                Online Failures
+                Online Failures for #{locoNo}
               </h2>
               <FailuresTable failures={data.failures} />
             </div>
