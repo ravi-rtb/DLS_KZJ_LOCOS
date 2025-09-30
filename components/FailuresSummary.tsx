@@ -33,6 +33,33 @@ const generateFyHeaders = (fy: string): string[] => {
   });
 };
 
+const sumSummaryTotals = (
+  total1: Omit<SummaryRow, 'name'>,
+  total2: Omit<SummaryRow, 'name'>,
+): Omit<SummaryRow, 'name'> => {
+  const emptyTotal = { monthlyData: Array(12).fill(null).map(() => ({ count: 0, items: [] })), total: { count: 0, items: [] } };
+  const t1 = total1 || emptyTotal;
+  const t2 = total2 || emptyTotal;
+
+  const combinedMonthlyData: MonthlyCell[] = t1.monthlyData.map((cell, i) => {
+    const otherCell = t2.monthlyData[i] || { count: 0, items: [] };
+    return {
+      count: cell.count + otherCell.count,
+      items: [...cell.items, ...otherCell.items],
+    };
+  });
+
+  const combinedTotal: MonthlyCell = {
+    count: t1.total.count + t2.total.count,
+    items: [...t1.total.items, ...t2.total.items],
+  };
+
+  return {
+    monthlyData: combinedMonthlyData,
+    total: combinedTotal,
+  };
+};
+
 const processSummary = (
   failures: TractionFailure[],
   fy: string,
@@ -157,6 +184,37 @@ const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: Tracti
   );
 };
 
+const SummaryTotalTable: React.FC<{ 
+  totals: Omit<SummaryRow, 'name'>; 
+  onCellClick: (failures: TractionFailure[]) => void;
+}> = ({ totals, onCellClick }) => {
+  return (
+    <div className="overflow-x-auto mt-4">
+      <table className="min-w-full text-sm">
+        <tfoot className="bg-gray-200 font-bold border-t-2 border-gray-400">
+          <tr>
+            <td className="px-3 py-2 text-left text-text-primary whitespace-nowrap sticky left-0 bg-gray-200">
+              Total
+            </td>
+            {totals.monthlyData.map((cell, i) => (
+              <td key={i} className="px-3 py-2 text-center w-20">
+                {cell.count > 0 ? (
+                  <button onClick={() => onCellClick(cell.items)} className="text-blue-600 hover:underline">{cell.count}</button>
+                ) : null}
+              </td>
+            ))}
+            <td className="px-3 py-2 text-center w-24">
+              {totals.total.count > 0 ? (
+                <button onClick={() => onCellClick(totals.total.items)} className="text-blue-600 hover:underline">{totals.total.count}</button>
+              ) : null}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+};
+
 
 const CollapsibleSummarySection: React.FC<{
   title: string;
@@ -237,7 +295,7 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
       return acc;
     }, {} as Record<string, TractionFailure[]>);
 
-    const result: Record<string, Record<string, SummaryData>> = {};
+    const result: Record<string, { [key: string]: SummaryData }> = {};
     for (const fy in failuresByFy) {
         const fyFailures = failuresByFy[fy];
         result[fy] = {
@@ -251,7 +309,17 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
             summaryE_punc: processSummary(fyFailures, fy, 'Loco Account', 'Equipment', f => !!f.elocosaf?.toUpperCase().includes('PUNC'), 'equipment'),
         }
     }
-    return result;
+
+    const resultWithTotals: Record<string, any> = {};
+    for (const fy in result) {
+      resultWithTotals[fy] = {
+        ...result[fy],
+        summaryA_total: sumSummaryTotals(result[fy].summaryA_main.totals, result[fy].summaryA_oth.totals),
+        summaryB_total: sumSummaryTotals(result[fy].summaryB_yLoco.totals, result[fy].summaryB_yOth.totals),
+        summaryC_total: sumSummaryTotals(result[fy].summaryC_main.totals, result[fy].summaryC_oth.totals),
+      };
+    }
+    return resultWithTotals;
   }, [allFailures]);
 
   const toggleYear = (fy: string) => {
@@ -332,6 +400,9 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
                     <div className="space-y-4">
                         <SummaryTable data={processedData[fy].summaryA_main} onCellClick={setModalFailures} />
                         <SummaryTable data={processedData[fy].summaryA_oth} onCellClick={setModalFailures} />
+                        {processedData[fy].summaryA_total?.total.count > 0 &&
+                            <SummaryTotalTable totals={processedData[fy].summaryA_total} onCellClick={setModalFailures} />
+                        }
                     </div>
                   </CollapsibleSummarySection>
                   
@@ -343,6 +414,9 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
                      <div className="space-y-4">
                         <SummaryTable data={processedData[fy].summaryB_yLoco} onCellClick={setModalFailures} />
                         <SummaryTable data={processedData[fy].summaryB_yOth} onCellClick={setModalFailures} />
+                        {processedData[fy].summaryB_total?.total.count > 0 &&
+                            <SummaryTotalTable totals={processedData[fy].summaryB_total} onCellClick={setModalFailures} />
+                        }
                     </div>
                   </CollapsibleSummarySection>
 
@@ -364,6 +438,9 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
                      <div className="space-y-4">
                         <SummaryTable data={processedData[fy].summaryC_main} onCellClick={setModalFailures} />
                         <SummaryTable data={processedData[fy].summaryC_oth} onCellClick={setModalFailures} />
+                        {processedData[fy].summaryC_total?.total.count > 0 &&
+                            <SummaryTotalTable totals={processedData[fy].summaryC_total} onCellClick={setModalFailures} />
+                        }
                     </div>
                   </CollapsibleSummarySection>
                   
