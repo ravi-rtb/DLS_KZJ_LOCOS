@@ -11,6 +11,9 @@ export const SHEET_NAMES = {
   WAG7_Modifications: 'WAG7_Modifications',
 };
 
+// URL for the external documents folder.
+export const DOCUMENTS_URL = 'https://drive.google.com/drive/folders/1CRiiwcqfEJIBEaXvw8ZgWoLGVOP3zjTO?usp=sharing';
+
 // Configuration for the columns to display in the Schedules table.
 // 'key' must be the lowercase version of the sheet column header, with no spaces.
 // 'header' is the display name in the app's table.

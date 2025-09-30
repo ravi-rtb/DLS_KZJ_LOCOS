@@ -52,16 +52,16 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
             Failure Details ({failures.length} records)
           </h2>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-sm table-fixed">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Date Failed</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Loco No. +MU With</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">ICMS/Message<br />Division<br />Railway</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Brief Message</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Cause of Failure</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Equipment<br />Component</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top">Responsibility</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Date Failed</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Loco No. +MU With</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">ICMS/Message<br />Division<br />Railway</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/6">Brief Message</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-5/12">Cause of Failure</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Equipment<br />Component</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Responsibility</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -75,12 +75,12 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                       {failure.icmsmessage && <p>{failure.icmsmessage}</p>}
                       {(failure.div || failure.rly) && <p>{failure.div}/{failure.rly}</p>}
                     </td>
-                    <td className="p-2 align-top text-text-primary whitespace-normal min-w-[150px]">{failure.briefmessage}</td>
-                    <td className="p-2 align-top text-text-primary whitespace-normal min-w-[150px]">{failure.causeoffailure}</td>
-                    <td className="p-2 align-top text-text-primary whitespace-nowrap">
+                    <td className="p-2 align-top text-text-primary whitespace-normal break-words">{failure.briefmessage}</td>
+                    <td className="p-2 align-top text-text-primary whitespace-normal break-words">{failure.causeoffailure}</td>
+                    <td className="p-2 align-top text-text-primary whitespace-normal break-words">
                       {failure.equipment || ''}{failure.component ? ` - ${failure.component}` : ''}
                     </td>
-                     <td className="p-2 align-top text-text-primary whitespace-nowrap">{failure.responsibility}</td>
+                     <td className="p-2 align-top text-text-primary whitespace-normal break-words">{failure.responsibility}</td>
                   </tr>
                 ))}
               </tbody>
