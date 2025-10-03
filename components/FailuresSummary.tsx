@@ -312,17 +312,22 @@ const CollapsibleSummarySection: React.FC<{
 
 const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
   const [allFailures, setAllFailures] = useState<TractionFailure[]>([]);
+  const [filteredFailures, setFilteredFailures] = useState<TractionFailure[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set());
   const [modalFailures, setModalFailures] = useState<TractionFailure[] | null>(null);
   const [expandedSummaries, setExpandedSummaries] = useState<Record<string, Set<string>>>({});
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const failures = await getAllFailures();
         setAllFailures(failures);
+        setFilteredFailures(failures); // Initially, show all failures
         // Automatically expand the latest financial year if data exists
         if (failures.length > 0) {
             const latestFy = failures
@@ -350,7 +355,7 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
   }, []);
 
   const processedData = useMemo(() => {
-    const failuresByFy = allFailures.reduce((acc, f) => {
+    const failuresByFy = filteredFailures.reduce((acc, f) => {
       const date = parseDateDDMMYY(f.datefailed);
       if (!date) return acc; // Skip records with invalid date format
       
@@ -385,7 +390,40 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
       };
     }
     return resultWithTotals;
-  }, [allFailures]);
+  }, [filteredFailures]);
+
+  const handleFilterApply = () => {
+    if (!startDate && !endDate) {
+        setFilteredFailures(allFailures);
+        return;
+    }
+
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+    
+    // To make the end date inclusive, set it to the end of the day.
+    if (end) {
+        end.setUTCHours(23, 59, 59, 999);
+    }
+
+    const filtered = allFailures.filter(failure => {
+        const failureDate = parseDateDDMMYY(failure.datefailed);
+        if (!failureDate) return false;
+
+        if (start && failureDate < start) return false;
+        if (end && failureDate > end) return false;
+
+        return true;
+    });
+
+    setFilteredFailures(filtered);
+};
+
+const handleFilterClear = () => {
+    setStartDate('');
+    setEndDate('');
+    setFilteredFailures(allFailures);
+};
 
   const toggleYear = (fy: string) => {
     setExpandedYears(prev => {
@@ -440,23 +478,69 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
           &larr; Back to Search
         </button>
       </div>
+
+      <div className="my-4 p-4 border rounded-lg bg-gray-50 print:hidden">
+          <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                  <label htmlFor="start-date" className="text-sm font-medium text-text-secondary">From:</label>
+                  <input 
+                      type="date" 
+                      id="start-date"
+                      value={startDate}
+                      onChange={e => setStartDate(e.target.value)}
+                      className="px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light text-brand-primary font-medium bg-white"
+                      aria-label="Start date for filtering failures"
+                  />
+              </div>
+              <div className="flex items-center gap-2">
+                  <label htmlFor="end-date" className="text-sm font-medium text-text-secondary">To:</label>
+                  <input 
+                      type="date" 
+                      id="end-date"
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
+                      className="px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:ring-brand-light focus:border-brand-light text-brand-primary font-medium bg-white"
+                      aria-label="End date for filtering failures"
+                  />
+              </div>
+              <button
+                  onClick={handleFilterApply}
+                  className="px-4 py-2 text-sm font-medium text-white bg-brand-secondary rounded-md hover:bg-brand-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-secondary transition"
+              >
+                  Apply Filter
+              </button>
+              <button
+                  onClick={handleFilterClear}
+                  className="px-4 py-2 text-sm font-medium text-text-secondary bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition"
+              >
+                  Clear
+              </button>
+          </div>
+      </div>
       
       {financialYears.length === 0 ? (
-        <p className="print:hidden">No failure data found for FY 2024-25 or later to generate summaries.</p>
+        <p className="print:hidden p-4 text-center text-text-secondary">
+          {filteredFailures.length !== allFailures.length 
+            ? 'No failure data found for the selected period.' 
+            : 'No failure data found for FY 2024-25 or later to generate summaries.'
+          }
+        </p>
       ) : (
-        <div className="space-y-4 print:hidden">
+        <div className="space-y-4 print:space-y-0">
           {financialYears.map(fy => (
-            <div key={fy} className="border rounded-lg">
+            <div key={fy} className="border rounded-lg print:border-none">
               <h3 
                 onClick={() => toggleYear(fy)}
-                className="text-lg font-bold bg-gray-50 p-4 cursor-pointer flex justify-between items-center rounded-t-lg hover:bg-gray-100"
+                className="text-lg font-bold bg-gray-50 p-4 cursor-pointer flex justify-between items-center rounded-t-lg hover:bg-gray-100 print:hidden"
                 aria-expanded={expandedYears.has(fy)}
               >
                 Financial Year: {fy}
                 <ChevronDownIcon className={`h-6 w-6 transform transition-transform ${expandedYears.has(fy) ? 'rotate-180' : ''}`} />
               </h3>
+               <div className="hidden print:block text-lg font-bold bg-gray-50 p-4 border-b">Financial Year: {fy}</div>
+
               {expandedYears.has(fy) && (
-                <div className="p-4 space-y-6 bg-gray-50 border-t">
+                <div className="p-4 space-y-6 bg-gray-50 border-t print:p-0 print:border-t-0 print:bg-white print:space-y-8">
                   <CollapsibleSummarySection 
                     title="ICMS Failures (Shed)"
                     isExpanded={expandedSummaries[fy]?.has('a')}
