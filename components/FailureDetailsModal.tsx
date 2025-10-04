@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { TractionFailure } from '../types';
 import { PrinterIcon } from './Icons';
@@ -56,12 +57,12 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
               <thead className="bg-gray-50">
                 <tr>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Date Failed</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Loco No. +MU With</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">ICMS/Message<br />Division<br />Railway</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Brief Message</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-6/12">Cause of Failure</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Equipment<br />Component</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Responsibility</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-0.8/12">Loco No. +MU With</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-0.8/12">ICMS/Message<br />Division<br />Railway</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-2/12">Brief Message</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-4.9/12">Cause of Failure</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1.5/12">Equipment<br />Component</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Section</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">

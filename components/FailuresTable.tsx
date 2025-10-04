@@ -68,21 +68,21 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures }) => {
       <table className="min-w-full w-full table-fixed">
         <thead className="bg-gray-50">
           <tr>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[5%]">S.No.</th>
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[4%]">S.No.</th>
             <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">
               <button onClick={() => requestSort('datefailed')} className="flex items-center gap-1 transition-colors hover:text-text-primary">
                 Date Failed {getSortIcon('datefailed')}
               </button>
             </th>
             <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">Loco No. +MU With</th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[9%]">
               <button onClick={() => requestSort('icmsmessage')} className="flex items-center gap-1 text-left transition-colors hover:text-text-primary">
-                <span>ICMS/Message<br />Division<br />Railway</span> {getSortIcon('icmsmessage')}
+                <span>ICMS/Msg<br />Division<br />Railway</span> {getSortIcon('icmsmessage')}
               </button>
             </th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[20%]">Brief Message</th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[30%]">Cause of Failure</th>
-            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[15%]">
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[17%]">Brief Message</th>
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[40%]">Cause of Failure</th>
+            <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">
               <button onClick={() => requestSort('equipment')} className="flex items-center gap-1 text-left transition-colors hover:text-text-primary">
                 <span>Equipment<br />Component</span> {getSortIcon('equipment')}
               </button>
