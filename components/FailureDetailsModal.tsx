@@ -56,13 +56,13 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
             <table className="min-w-full text-sm table-fixed">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Date Failed</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-0.8/12">Loco No. +MU With</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-0.8/12">ICMS/Message<br />Division<br />Railway</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-2/12">Brief Message</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-4.9/12">Cause of Failure</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1.5/12">Equipment<br />Component</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-1/12">Section</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[8%]">Date Failed</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">Loco No. +MU With</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">ICMS/Message<br />Division<br />Railway</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[15%]">Brief Message</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[30%]">Cause of Failure</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[15%]">Equipment<br />Component</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">Section</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -70,7 +70,21 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="p-2 align-top text-text-primary whitespace-normal break-words">{failure.datefailed}</td>
                     <td className="p-2 align-top text-text-primary whitespace-normal break-words">
-                      <span className="font-bold">{failure.locono}</span> {failure.muwith ? `+ ${failure.muwith}` : ''}
+                      {failure.documentlink ? (
+                        <a
+                          href={failure.documentlink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors"
+                          title={`Open document for loco #${failure.locono}`}
+                          aria-label={`Open document for loco number ${failure.locono}`}
+                        >
+                          {failure.locono}
+                        </a>
+                      ) : (
+                        <span className="font-bold">{failure.locono}</span>
+                      )}
+                      {failure.muwith ? ` + ${failure.muwith}` : ''}
                     </td>
                     <td className="p-2 align-top text-text-primary whitespace-normal break-words">
                       {failure.icmsmessage && <p>{failure.icmsmessage}</p>}

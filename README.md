@@ -36,6 +36,14 @@ You can easily change which columns appear in the tables.
     *   `header`: This is the text that will be displayed in the app's table header (e.g., "Incoming Date").
 4.  You can add, remove, or reorder the items in these lists to change the tables in the app.
 
+#### 4. Linking Failure Reports
+
+You can link individual failure records to external documents (like a Google Doc or PDF).
+1.  Open your Google Sheet and go to the **`Traction_failures`** sheet.
+2.  Add a new column with the exact header: `Document Link`.
+3.  In this new column, paste the full URL for the document corresponding to that failure.
+4.  The app will automatically detect these links and show a clickable icon in the failure details pop-up, which will open the link in a new tab.
+
 ---
 
 ### How to Deploy (for free)

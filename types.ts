@@ -22,6 +22,7 @@ export interface TractionFailure {
   equipment: string;
   responsibility: string;
   elocosaf: string;
+  documentlink?: string;
   [key: string]: string;
 }
 

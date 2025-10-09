@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import type { TractionFailure } from '../types';
 import { TableCellsIcon, ChevronUpIcon, ChevronDownIcon } from './Icons';
@@ -95,7 +96,21 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures }) => {
               <td className="p-3 align-top text-sm text-text-primary text-center">{index + 1}</td>
               <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">{failure.datefailed}</td>
               <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">
-                <span className="font-bold">{failure.locono}</span> {failure.muwith ? `+ ${failure.muwith}` : ''}
+                {failure.documentlink ? (
+                  <a
+                    href={failure.documentlink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors"
+                    title={`Open document for loco #${failure.locono}`}
+                    aria-label={`Open document for loco number ${failure.locono}`}
+                  >
+                    {failure.locono}
+                  </a>
+                ) : (
+                  <span className="font-bold">{failure.locono}</span>
+                )}
+                {failure.muwith ? ` + ${failure.muwith}` : ''}
               </td>
               <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">
                 {failure.icmsmessage && <p>{failure.icmsmessage}</p>}
