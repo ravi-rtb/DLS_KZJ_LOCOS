@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect } from 'react';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } from './types';
 import { getLocoData, getAllLocoNumbers } from './services/googleSheetService';
@@ -14,6 +12,7 @@ import WAG7ModificationsList from './components/WAG7ModificationsList';
 import { WrenchScrewdriverIcon, CalendarDaysIcon, ClipboardDocumentListIcon, FolderIcon, TrainIcon } from './components/Icons';
 import ModificationsSummary from './components/ModificationsSummary';
 import FailuresSummary from './components/FailuresSummary';
+import DashboardCharts from './components/DashboardCharts';
 
 // FIX: Removed React.FC type annotation to fix incorrect type inference by the compiler.
 const App = () => {
@@ -77,7 +76,8 @@ const App = () => {
   const renderHomePage = () => (
     <main className="container mx-auto p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
-        <p className="text-center text-text-secondary mb-6">
+
+        <p className="text-center text-text-secondary mt-8 mb-6">
           Search for a KZJD WAG7 locomotive number or explore the summary reports.
         </p>
         <SearchBar onSearch={handleSearch} isLoading={isLoading} suggestions={allLocoNumbers} />
@@ -120,6 +120,10 @@ const App = () => {
             <p className="text-sm text-text-secondary">Access technical documents, reports, and manuals in Google Drive.</p>
           </a>
         </div>
+        
+        {/* Render charts only on initial home screen */}
+        {!data && !isLoading && !error && <DashboardCharts />}
+
       </div>
 
       <div className="mt-8 max-w-4xl mx-auto">
