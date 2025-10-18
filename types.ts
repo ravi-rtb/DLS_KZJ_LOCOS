@@ -1,3 +1,10 @@
+
+export interface UserProfile {
+  email: string;
+  name: string;
+  picture: string;
+}
+
 export interface LocoDetails {
   [key: string]: string;
 }
@@ -23,7 +30,11 @@ export interface TractionFailure {
   responsibility: string;
   elocosaf: string;
   documentlink?: string;
-  [key: string]: string;
+  medialink?: string;
+  // FIX: Updated index signature to be compatible with optional properties.
+  // This resolves an issue where properties were being inferred as `unknown`
+  // because the original type definition was inconsistent.
+  [key: string]: string | undefined;
 }
 
 // FIX: Add missing WAGModification interface to resolve module export error.
