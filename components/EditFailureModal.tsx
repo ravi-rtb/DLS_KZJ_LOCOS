@@ -32,6 +32,8 @@ const EditFailureModal: React.FC<EditFailureModalProps> = ({ failure, idToken, o
         body: JSON.stringify({
           locoNo: failure.locono,
           dateFailed: failure.datefailed,
+          responsibility: failure.responsibility || '', // Added for authorization checks
+          oldCauseOfFailure: failure.causeoffailure || '', // For logging
           newCauseOfFailure: causeOfFailure,
           idToken: idToken,
         }),

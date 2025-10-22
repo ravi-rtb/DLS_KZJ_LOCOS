@@ -73,6 +73,8 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
     setEditingFailure(null);
     onDataUpdate();
   }
+  
+  const cutoffDate = useMemo(() => new Date(Date.UTC(2024, 3, 1)), []); // April is month 3
 
   return (
     <>
@@ -89,7 +91,6 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
           <thead className="bg-gray-50">
             <tr>
               <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[4%]">S.No.</th>
-              {user && <th className="p-3 text-center text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[5%]">Edit</th>}
               <th className="p-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">
                 <button onClick={() => requestSort('datefailed')} className="flex items-center gap-1 transition-colors hover:text-text-primary">
                   Date Failed {getSortIcon('datefailed')}
@@ -111,21 +112,13 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
             </tr>
           </thead>
           <tbody>
-            {sortedFailures.map((failure, index) => (
+            {sortedFailures.map((failure, index) => {
+              const failureDate = parseDateDDMMYY(failure.datefailed);
+              const isEditable = failureDate && failureDate >= cutoffDate;
+
+              return (
               <tr key={`${failure.locono}-${failure.datefailed}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
                 <td className="p-3 align-top text-sm text-text-primary text-center">{index + 1}</td>
-                {user && (
-                  <td className="p-3 align-top text-sm text-text-primary text-center">
-                    <button
-                      onClick={() => setEditingFailure(failure)}
-                      className="text-brand-secondary hover:text-brand-primary"
-                      title="Edit Cause of Failure"
-                      aria-label="Edit cause of failure for this record"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                  </td>
-                )}
                 <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">{failure.datefailed}</td>
                 <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">
                   {failure.documentlink ? (
@@ -163,12 +156,33 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                     </a>
                   )}
                 </td>
-                <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">{failure.causeoffailure}</td>
+                <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">
+                  <div className="flex justify-between items-start gap-2">
+                    <span>{failure.causeoffailure}</span>
+                    {user && (
+                      isEditable ? (
+                        <button
+                          onClick={() => setEditingFailure(failure)}
+                          className="text-brand-secondary hover:text-brand-primary flex-shrink-0"
+                          title="Edit Cause of Failure"
+                          aria-label="Edit cause of failure for this record"
+                        >
+                          <PencilIcon className="h-5 w-5" />
+                        </button>
+                      ) : (
+                        <span className="text-gray-300 cursor-not-allowed flex-shrink-0" title="Editing is only available for failures from April 2024 onwards.">
+                          <PencilIcon className="h-5 w-5" />
+                        </span>
+                      )
+                    )}
+                  </div>
+                </td>
                 <td className="p-3 align-top text-sm text-text-primary whitespace-normal break-words">
                   {failure.equipment || ''}{failure.component ? ` - ${failure.component}` : ''}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
