@@ -340,18 +340,21 @@ const DashboardCharts = () => {
   }, [investigationChartData, isMobile]);
 
   const icmsChartData = useMemo(() => {
-    const baseFiltered = currentFyFailures.filter(f => {
+    // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
+    const baseFiltered = currentFyFailures.filter((f: TractionFailure) => {
         if (icmsToggle === 'shed') {
             return f.icmsmessage?.toUpperCase() !== 'MESSAGE';
         }
         return f.elocosaf?.toUpperCase().includes('Y-LOCO') || f.elocosaf?.toUpperCase().includes('Y-OTH');
     });
 
+    // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
     const filtered = responsibilityFilter === 'loco'
-        ? baseFiltered.filter(f => f.responsibility?.toUpperCase() !== 'OTH')
+        ? baseFiltered.filter((f: TractionFailure) => f.responsibility?.toUpperCase() !== 'OTH')
         : baseFiltered;
 
-    const dataByEquipmentAndResp = filtered.reduce((acc, f) => {
+    // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
+    const dataByEquipmentAndResp = filtered.reduce((acc, f: TractionFailure) => {
         const equipment = f.equipment || 'N/A';
         const responsibility = f.responsibility || 'N/A';
         
@@ -374,11 +377,13 @@ const DashboardCharts = () => {
     }, {} as Record<string, number>);
 
     const equipments = Object.keys(dataByEquipmentAndResp).sort((a, b) => equipmentTotals[b] - equipmentTotals[a]);
-    const allUniqueResponsibilities = [...new Set(filtered.map(f => f.responsibility || 'N/A'))];
+    // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
+    const allUniqueResponsibilities = [...new Set(filtered.map((f: TractionFailure) => f.responsibility || 'N/A'))];
 
     const responsibilityData = allUniqueResponsibilities.map(resp => ({
         name: resp,
-        total: filtered.filter(f => (f.responsibility || 'N/A') === resp).length
+        // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
+        total: filtered.filter((f: TractionFailure) => (f.responsibility || 'N/A') === resp).length
     }));
 
     const othResponsibilityData = responsibilityData.find(r => r.name.toUpperCase() === 'OTH');
@@ -506,7 +511,8 @@ const DashboardCharts = () => {
                     if (totalCount === 0) return '';
                     
                     const failures = dataByEquipmentAndResp[equipment]?.[responsibility]?.all || [];
-                    const locos = [...new Set(failures.map((f: any) => f.locono).filter(Boolean))];
+                    // FIX: Explicitly type `f` as `TractionFailure` to resolve `unknown` type error for `locos`.
+                    const locos = [...new Set(failures.map((f: TractionFailure) => f.locono).filter(Boolean))];
                     
                     let title = `${responsibility} (${totalCount})`;
                     if (pendingCount > 0) {

@@ -1,5 +1,6 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
-import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } from './types';
+import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification, UserProfile } from './types';
 import { getLocoData, getAllLocoNumbers } from './services/googleSheetService';
 import { DOCUMENTS_URL } from './constants';
 import SearchBar from './components/SearchBar';
@@ -13,8 +14,8 @@ import { WrenchScrewdriverIcon, CalendarDaysIcon, ClipboardDocumentListIcon, Fol
 import ModificationsSummary from './components/ModificationsSummary';
 import FailuresSummary from './components/FailuresSummary';
 import DashboardCharts from './components/DashboardCharts';
+import Auth from './components/Auth';
 
-// FIX: Removed React.FC type annotation to fix incorrect type inference by the compiler.
 const App = () => {
   const [locoNo, setLocoNo] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -27,6 +28,8 @@ const App = () => {
   } | null>(null);
   const [view, setView] = useState<'home' | 'summary' | 'failuresSummary'>('home');
   const [allLocoNumbers, setAllLocoNumbers] = useState<string[]>([]);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLocoNumbers = async () => {
@@ -47,11 +50,7 @@ const App = () => {
     setLocoNo('');
   }, []);
 
-  const handleSearch = useCallback(async (searchLocoNo: string) => {
-    if (!searchLocoNo.trim()) {
-      setError('Please enter a locomotive number.');
-      return;
-    }
+  const fetchDataForLoco = useCallback(async (searchLocoNo: string) => {
     setIsLoading(true);
     setError(null);
     setData(null);
@@ -72,6 +71,21 @@ const App = () => {
       setIsLoading(false);
     }
   }, []);
+
+  const handleSearch = useCallback((searchLocoNo: string) => {
+    if (!searchLocoNo.trim()) {
+      setError('Please enter a locomotive number.');
+      return;
+    }
+    fetchDataForLoco(searchLocoNo);
+  }, [fetchDataForLoco]);
+  
+  const handleDataUpdate = useCallback(() => {
+    if (locoNo) {
+      fetchDataForLoco(locoNo);
+    }
+  }, [locoNo, fetchDataForLoco]);
+
 
   const renderHomePage = () => (
     <main className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -158,7 +172,7 @@ const App = () => {
                 <WrenchScrewdriverIcon className="h-6 w-6 mr-3" />
                 Online Failures for #{locoNo}
               </h2>
-              <FailuresTable failures={data.failures} />
+              <FailuresTable failures={data.failures} user={user} idToken={idToken} onDataUpdate={handleDataUpdate} />
             </div>
 
           </div>
@@ -196,6 +210,7 @@ const App = () => {
               DIESEL LOCO SHED - KAZIPET
             </h1>
           </div>
+          <Auth onAuthChange={(profile, token) => { setUser(profile); setIdToken(token); }} />
         </div>
       </header>
       

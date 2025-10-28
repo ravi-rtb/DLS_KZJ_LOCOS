@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import type { TractionFailure } from '../types';
-import { PrinterIcon, FullScreenEnterIcon, FullScreenExitIcon } from './Icons';
+import { PrinterIcon, FullScreenEnterIcon, FullScreenExitIcon, PhotoIcon } from './Icons';
 
 interface FailureDetailsModalProps {
   failures: TractionFailure[];
@@ -78,8 +78,8 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[8%]">Date Failed</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">Loco No. +MU With</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">ICMS/Message<br />Division<br />Railway</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[15%]">Brief Message</th>
-                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[30%]">Cause of Failure</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[20%]">Brief Message</th>
+                  <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[25%]">Cause of Failure</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[15%]">Equipment<br />Component</th>
                   <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">Section</th>
                 </tr>
@@ -109,7 +109,22 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                       {failure.icmsmessage && <p>{failure.icmsmessage}</p>}
                       {(failure.div || failure.rly) && <p>{failure.div}/{failure.rly}</p>}
                     </td>
-                    <td className="p-2 align-top text-text-primary whitespace-normal break-words">{failure.briefmessage}</td>
+                    <td className="p-2 align-top text-text-primary whitespace-normal break-words">
+                      <span>{failure.briefmessage}</span>
+                      {failure.medialink && (
+                        <a
+                          href={failure.medialink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-2"
+                          title="View Media in Google Drive"
+                          aria-label="View media for this failure"
+                        >
+                          <PhotoIcon className="h-4 w-4" />
+                          <span>View Media</span>
+                        </a>
+                      )}
+                    </td>
                     <td className="p-2 align-top text-text-primary whitespace-normal break-words">{failure.causeoffailure}</td>
                     <td className="p-2 align-top text-text-primary whitespace-normal break-words">
                       {failure.equipment || ''}{failure.component ? ` - ${failure.component}` : ''}
