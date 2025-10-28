@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import type { TractionFailure, UserProfile } from '../types';
-import { TableCellsIcon, ChevronUpIcon, ChevronDownIcon, PhotoIcon, PencilIcon } from './Icons';
+import { TableCellsIcon, ChevronUpIcon, ChevronDownIcon, PhotoIcon, PencilIcon, LinkIcon } from './Icons';
 import { parseDateDDMMYY } from '../services/googleSheetService';
 import EditFailureModal from './EditFailureModal';
 
@@ -86,7 +86,9 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
           onSuccess={handleEditSuccess}
         />
       )}
-      <div className="overflow-x-auto">
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full w-full table-fixed">
           <thead className="bg-gray-50">
             <tr>
@@ -185,6 +187,97 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {sortedFailures.map((failure, index) => {
+          const failureDate = parseDateDDMMYY(failure.datefailed);
+          const isEditable = failureDate && failureDate >= cutoffDate;
+
+          return (
+            <div key={`${failure.locono}-${failure.datefailed}-${index}-mobile`} className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
+              <div className="flex justify-between items-start border-b pb-2 mb-3">
+                <div>
+                  <p className="font-bold text-base text-brand-primary">
+                    <span className="text-text-secondary font-medium">#{index + 1}</span> {failure.locono}
+                    {failure.muwith ? ` + ${failure.muwith}` : ''}
+                  </p>
+                  <p className="text-text-secondary">{failure.datefailed}</p>
+                </div>
+                 {failure.documentlink && (
+                    <a
+                      href={failure.documentlink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                      title={`Open document for loco #${failure.locono}`}
+                      aria-label={`Open document for loco number ${failure.locono}`}
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                      View Doc
+                    </a>
+                  )}
+              </div>
+              
+              <div className="space-y-3">
+                 <div className="grid grid-cols-12 gap-2">
+                    <div className="col-span-4"><p className="font-semibold text-text-secondary">ICMS/Msg</p></div>
+                    <div className="col-span-8"><p className="text-text-primary">{failure.icmsmessage}</p></div>
+                 </div>
+                 <div className="grid grid-cols-12 gap-2">
+                    <div className="col-span-4"><p className="font-semibold text-text-secondary">Div/Rly</p></div>
+                    <div className="col-span-8"><p className="text-text-primary">{failure.div}{failure.rly && `/${failure.rly}`}</p></div>
+                 </div>
+                 <div className="grid grid-cols-12 gap-2">
+                    <div className="col-span-4"><p className="font-semibold text-text-secondary">Message</p></div>
+                    <div className="col-span-8 text-text-primary">
+                      <span>{failure.briefmessage}</span>
+                      {failure.medialink && (
+                        <a
+                          href={failure.medialink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-1"
+                          title="View Media in Google Drive"
+                          aria-label="View media for this failure"
+                        >
+                          <PhotoIcon className="h-4 w-4" />
+                          <span>View Media</span>
+                        </a>
+                      )}
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-12 gap-2">
+                    <div className="col-span-4"><p className="font-semibold text-text-secondary">Equipment</p></div>
+                    <div className="col-span-8"><p className="text-text-primary">{failure.equipment || ''}{failure.component ? ` - ${failure.component}` : ''}</p></div>
+                 </div>
+                 <div className="pt-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <p className="font-semibold text-text-secondary">Cause of Failure</p>
+                      {user && (
+                        isEditable ? (
+                          <button
+                            onClick={() => setEditingFailure(failure)}
+                            className="text-brand-secondary hover:text-brand-primary flex-shrink-0"
+                            title="Edit Cause of Failure"
+                            aria-label="Edit cause of failure for this record"
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                          </button>
+                        ) : (
+                          <span className="text-gray-300 cursor-not-allowed flex-shrink-0" title="Editing is only available for failures from April 2024 onwards.">
+                            <PencilIcon className="h-5 w-5" />
+                          </span>
+                        )
+                      )}
+                    </div>
+                    <p className="text-text-primary bg-white p-2 border rounded-md w-full">{failure.causeoffailure}</p>
+                 </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </>
   );
