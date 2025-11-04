@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAllFailures, parseDateDDMMYY } from '../services/googleSheetService';
 import type { TractionFailure } from '../types';
@@ -51,7 +52,6 @@ const sumSummaryTotals = (
 
   const combinedTotal: MonthlyCell = {
     count: t1.total.count + t2.total.count,
-    // FIX: `otherCell` is not in scope here. Use `t2.total.items` instead.
     items: [...t1.total.items, ...t2.total.items],
   };
 
@@ -83,7 +83,7 @@ const processSummary = (
       });
     }
 
-    const date = parseDateDDMMYY(f.datefailed);
+    const date = parseDateDDMMYY(f.datefailed || '');
     if (!date) return; // Skip if date is invalid
 
     const month = date.getUTCMonth();
@@ -332,7 +332,7 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
         if (failures.length > 0) {
             const latestFy = failures
                 .map(f => {
-                    const date = parseDateDDMMYY(f.datefailed);
+                    const date = parseDateDDMMYY(f.datefailed || '');
                     return date ? getFinancialYear(date) : null;
                 })
                 .filter((fy): fy is string => !!fy)
@@ -356,7 +356,7 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
 
   const processedData = useMemo(() => {
     const failuresByFy = filteredFailures.reduce((acc, f) => {
-      const date = parseDateDDMMYY(f.datefailed);
+      const date = parseDateDDMMYY(f.datefailed || '');
       if (!date) return acc; // Skip records with invalid date format
       
       const fy = getFinancialYear(date);
@@ -407,7 +407,7 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
     }
 
     const filtered = allFailures.filter(failure => {
-        const failureDate = parseDateDDMMYY(failure.datefailed);
+        const failureDate = parseDateDDMMYY(failure.datefailed || '');
         if (!failureDate) return false;
 
         if (start && failureDate < start) return false;

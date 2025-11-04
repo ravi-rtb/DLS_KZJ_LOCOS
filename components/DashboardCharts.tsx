@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { getAllFailures, parseDateDDMMYY } from '../services/googleSheetService';
 import type { TractionFailure } from '../types';
@@ -212,7 +213,7 @@ const DashboardCharts = () => {
 
   const currentFyFailures = useMemo(() => {
     return failures.filter(f => {
-      const date = parseDateDDMMYY(f.datefailed);
+      const date = parseDateDDMMYY(f.datefailed || '');
       return date && getFinancialYear(date) === '2025-26';
     });
   }, [failures]);
@@ -294,7 +295,7 @@ const DashboardCharts = () => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        onClick: (evt) => {
+        onClick: (evt: any) => {
           const points = chart1InstanceRef.current.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
           if (points.length) {
             const firstPoint = points[0];
@@ -340,7 +341,6 @@ const DashboardCharts = () => {
   }, [investigationChartData, isMobile]);
 
   const icmsChartData = useMemo(() => {
-    // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
     const baseFiltered = currentFyFailures.filter((f: TractionFailure) => {
         if (icmsToggle === 'shed') {
             return f.icmsmessage?.toUpperCase() !== 'MESSAGE';
@@ -348,12 +348,10 @@ const DashboardCharts = () => {
         return f.elocosaf?.toUpperCase().includes('Y-LOCO') || f.elocosaf?.toUpperCase().includes('Y-OTH');
     });
 
-    // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
     const filtered = responsibilityFilter === 'loco'
         ? baseFiltered.filter((f: TractionFailure) => f.responsibility?.toUpperCase() !== 'OTH')
         : baseFiltered;
 
-    // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
     const dataByEquipmentAndResp = filtered.reduce((acc, f: TractionFailure) => {
         const equipment = f.equipment || 'N/A';
         const responsibility = f.responsibility || 'N/A';
@@ -372,22 +370,20 @@ const DashboardCharts = () => {
     }, {} as Record<string, Record<string, { all: TractionFailure[], pending: TractionFailure[] }>>);
     
     const equipmentTotals = Object.keys(dataByEquipmentAndResp).reduce((acc, equipment) => {
-      acc[equipment] = Object.values(dataByEquipmentAndResp[equipment]).flatMap(r => r.all).length;
+      acc[equipment] = Object.values(dataByEquipmentAndResp[equipment]).flatMap((r: { all: TractionFailure[] }) => r.all).length;
       return acc;
     }, {} as Record<string, number>);
 
     const equipments = Object.keys(dataByEquipmentAndResp).sort((a, b) => equipmentTotals[b] - equipmentTotals[a]);
-    // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
     const allUniqueResponsibilities = [...new Set(filtered.map((f: TractionFailure) => f.responsibility || 'N/A'))];
 
     const responsibilityData = allUniqueResponsibilities.map(resp => ({
         name: resp,
-        // FIX: Explicitly type `f` as `TractionFailure` to fix type inference issues.
         total: filtered.filter((f: TractionFailure) => (f.responsibility || 'N/A') === resp).length
     }));
 
-    const othResponsibilityData = responsibilityData.find(r => r.name.toUpperCase() === 'OTH');
-    const otherResponsibilitiesData = responsibilityData.filter(r => r.name.toUpperCase() !== 'OTH');
+    const othResponsibilityData = responsibilityData.find((r: { name: string }) => r.name.toUpperCase() === 'OTH');
+    const otherResponsibilitiesData = responsibilityData.filter((r: { name: string }) => r.name.toUpperCase() !== 'OTH');
     otherResponsibilitiesData.sort((a, b) => b.total - a.total);
     const sortedResponsibilities = [...otherResponsibilitiesData.map(r => r.name)];
     if (othResponsibilityData) {
@@ -396,7 +392,7 @@ const DashboardCharts = () => {
 
     let colorIndex = 0;
     const datasets: any[] = [];
-    sortedResponsibilities.forEach((resp) => {
+    sortedResponsibilities.forEach((resp: string) => {
         const isOth = resp.toUpperCase() === 'OTH';
         const color = isOth ? OTH_COLOR : getColor(colorIndex++);
 
@@ -491,7 +487,7 @@ const DashboardCharts = () => {
                 position: 'top', 
                 labels: { 
                     boxWidth: 20,
-                    filter: (legendItem) => !legendItem.text.includes('(Pending)')
+                    filter: (legendItem: any) => !legendItem.text.includes('(Pending)')
                 } 
               },
               tooltip: {
@@ -511,8 +507,7 @@ const DashboardCharts = () => {
                     if (totalCount === 0) return '';
                     
                     const failures = dataByEquipmentAndResp[equipment]?.[responsibility]?.all || [];
-                    // FIX: Explicitly type `f` as `TractionFailure` to resolve `unknown` type error for `locos`.
-                    const locos = [...new Set(failures.map((f: TractionFailure) => f.locono).filter(Boolean))];
+                    const locos: string[] = [...new Set(failures.map((f: TractionFailure) => f.locono).filter(Boolean) as string[])];
                     
                     let title = `${responsibility} (${totalCount})`;
                     if (pendingCount > 0) {
