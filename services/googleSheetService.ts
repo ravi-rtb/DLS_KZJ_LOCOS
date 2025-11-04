@@ -1,3 +1,4 @@
+
 import { SPREADSHEET_ID, SHEET_NAMES } from '../constants';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } from '../types';
 
@@ -41,7 +42,7 @@ const parseGvizData = <T,>(jsonString: string, normalizeKeys: boolean = true): T
   });
   
   return table.rows.map((row: { c: ({ v: any; f?: string } | null)[]; }) => {
-    const newRow: { [key: string]: any } = {};
+    const newRow: { [key:string]: any } = {};
     cols.forEach((colName: string, index: number) => {
       if (!colName) return; // Skip columns that didn't have a valid header.
       
@@ -112,33 +113,75 @@ const fetchSheet = async <T,>(sheetName: string, normalizeKeys: boolean = true):
     return parseGvizData<T>(text, normalizeKeys);
 };
 
-// Helper to find the key for 'locono' in an object with arbitrary keys.
+// Helper to find the key for 'locono' in an object with arbitrary original keys.
 const findLocoNumberKey = (obj: { [key: string]: any }): string | undefined => {
     if (!obj) return undefined;
-    return Object.keys(obj).find(k => 
-        k.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/gi, '') === 'locono'
-    );
+    for (const key of Object.keys(obj)) {
+        const normalizedKey = key.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/gi, '');
+        if (normalizedKey === 'loco' || normalizedKey === 'locono' || normalizedKey === 'loconumber') {
+            return key; // Return the original, un-normalized key
+        }
+    }
+    return undefined;
+};
+
+// Helper to find the normalized key for 'locono' in an object with already normalized keys.
+const findNormalizedLocoNumberKey = (obj: { [key: string]: any }): string | undefined => {
+    if (!obj) return undefined;
+    const keys = Object.keys(obj);
+    if (keys.includes('locono')) return 'locono';
+    if (keys.includes('loconumber')) return 'loconumber';
+    if (keys.includes('loco')) return 'loco';
+    return undefined;
 };
 
 /**
- * Fetches all locomotive numbers from the Loco_list sheet.
+ * Transforms a raw failure record from the WDG4 sheet to the standard TractionFailure format.
+ * @param raw The raw object from the sheet.
+ * @returns A formatted object conforming to the TractionFailure interface.
+ */
+const transformWDG4Failure = (raw: any): TractionFailure => {
+  const locoKey = findNormalizedLocoNumberKey(raw);
+  return {
+    datefailed: raw.dateoffailure || '',
+    locono: locoKey ? (raw[locoKey] || '') : '',
+    muwith: raw.muwith || '',
+    icmsmessage: raw.messageicms || '',
+    div: raw.faileddivn || '',
+    rly: raw.failedrly || '',
+    briefmessage: raw.briefcause || '',
+    causeoffailure: raw.shedinvestigation || '',
+    equipment: raw.system || '',
+    component: raw.componentfailed || '',
+    // These fields do not exist in the WDG4 sheet, so default to empty.
+    responsibility: '',
+    elocosaf: '',
+  };
+};
+
+/**
+ * Fetches all locomotive numbers from both WAG7 and WDG4 lists.
  * @returns An array of all locomotive numbers as strings.
  */
 export const getAllLocoNumbers = async (): Promise<string[]> => {
-  const allDetails = await fetchSheet<LocoDetails>(SHEET_NAMES.Loco_list, false); // Keep raw headers
-  if (allDetails.length === 0) {
-    return [];
-  }
-  
-  const locoNoKey = findLocoNumberKey(allDetails[0]);
-  if (!locoNoKey) {
-    console.warn("Could not find 'Loco Number' column in the Loco_list sheet.");
-    return [];
-  }
+  const [wag7Details, wdg4Details] = await Promise.all([
+    fetchSheet<LocoDetails>(SHEET_NAMES.Loco_list, false), // Keep raw headers
+    fetchSheet<LocoDetails>(SHEET_NAMES.G4_list, false),   // Keep raw headers
+  ]);
 
-  return allDetails
-    .map(loco => String(loco[locoNoKey] || '').trim())
-    .filter(locoNo => locoNo !== '');
+  const wag7LocoNoKey = wag7Details.length > 0 ? findLocoNumberKey(wag7Details[0]) : undefined;
+  const wdg4LocoNoKey = wdg4Details.length > 0 ? findLocoNumberKey(wdg4Details[0]) : undefined;
+
+  const wag7Numbers = wag7LocoNoKey 
+    ? wag7Details.map(loco => String(loco[wag7LocoNoKey] || '').trim()).filter(Boolean)
+    : [];
+    
+  const wdg4Numbers = wdg4LocoNoKey
+    ? wdg4Details.map(loco => String(loco[wdg4LocoNoKey] || '').trim()).filter(Boolean)
+    : [];
+
+  // Combine and remove duplicates
+  return [...new Set([...wag7Numbers, ...wdg4Numbers])];
 };
 
 
@@ -163,39 +206,92 @@ export const getAllFailures = async (): Promise<TractionFailure[]> => {
 
 /**
  * Fetches and aggregates all required data for a specific locomotive number.
+ * It intelligently determines if the loco is a WAG7 or WDG4.
  * @param locoNo The locomotive number to search for.
- * @returns An object containing details, schedules, and failures for the given loco.
+ * @returns An object containing details, schedules, failures, modifications and type for the given loco.
  */
 export const getLocoData = async (locoNo: string) => {
   const normalizedLocoNo = locoNo.trim().toUpperCase();
 
-  // Fetch all sheets concurrently for better performance
-  const [allDetails, allSchedules, allFailures, allWAG7Modifications] = await Promise.all([
-    fetchSheet<LocoDetails>(SHEET_NAMES.Loco_list, false), // Keep raw headers
-    fetchSheet<LocoSchedule>(SHEET_NAMES.Loco_Schedules, true), // Normalize for stable keys
-    fetchSheet<TractionFailure>(SHEET_NAMES.Traction_failures, true), // Normalize for stable keys
-    fetchSheet<WAG7Modification>(SHEET_NAMES.WAG7_Modifications, false), // Keep raw headers
+  // Fetch master lists to determine loco type first.
+  const [wag7List, wdg4List] = await Promise.all([
+    fetchSheet<LocoDetails>(SHEET_NAMES.Loco_list, false),
+    fetchSheet<LocoDetails>(SHEET_NAMES.G4_list, false),
   ]);
 
-  // Find the key for the loco number in the raw-header details sheet
-  const locoNoKeyDetails = allDetails.length > 0 ? findLocoNumberKey(allDetails[0]) : undefined;
+  const wag7LocoNoKey = wag7List.length > 0 ? findLocoNumberKey(wag7List[0]) : undefined;
+  const wdg4LocoNoKey = wdg4List.length > 0 ? findLocoNumberKey(wdg4List[0]) : undefined;
 
-  // Find the specific loco's details using the dynamic key
-  const details = locoNoKeyDetails
-    ? allDetails.find(d => String(d[locoNoKeyDetails])?.toUpperCase() === normalizedLocoNo) || null
-    : null;
-  
-  // Filter schedules and failures using the stable, normalized 'locono' key
-  const schedules = allSchedules.filter(s => String(s.locono)?.toUpperCase() === normalizedLocoNo);
-  const failures = allFailures.filter(f => String(f.locono)?.toUpperCase() === normalizedLocoNo);
-  
-  // Find the key for the loco number in the raw-header modifications sheet
-  const locoNoKeyMods = allWAG7Modifications.length > 0 ? findLocoNumberKey(allWAG7Modifications[0]) : undefined;
-  
-  // Filter modifications using the dynamic key
-  const wag7Modifications = locoNoKeyMods
-    ? allWAG7Modifications.filter(m => String(m[locoNoKeyMods])?.toUpperCase() === normalizedLocoNo)
-    : [];
+  let details: LocoDetails | null = null;
+  let locoType: 'WAG7' | 'WDG4' | null = null;
 
-  return { details, schedules, failures, wag7Modifications };
+  if (wag7LocoNoKey) {
+    const wag7Details = wag7List.find(d => String(d[wag7LocoNoKey])?.toUpperCase() === normalizedLocoNo);
+    if (wag7Details) {
+      details = wag7Details;
+      locoType = 'WAG7';
+    }
+  }
+  
+  if (!details && wdg4LocoNoKey) {
+    const wdg4Details = wdg4List.find(d => String(d[wdg4LocoNoKey])?.toUpperCase() === normalizedLocoNo);
+    if (wdg4Details) {
+      details = wdg4Details;
+      locoType = 'WDG4';
+    }
+  }
+
+  // If loco not found in any list, return early.
+  if (!locoType || !details) {
+    return { details: null, schedules: [], failures: [], wag7Modifications: [], locoType: null };
+  }
+
+  if (locoType === 'WAG7') {
+    const [allSchedules, allFailures, allWAG7Modifications] = await Promise.all([
+      fetchSheet<LocoSchedule>(SHEET_NAMES.Loco_Schedules, true),
+      fetchSheet<TractionFailure>(SHEET_NAMES.Traction_failures, true),
+      fetchSheet<WAG7Modification>(SHEET_NAMES.WAG7_Modifications, false),
+    ]);
+    
+    const scheduleLocoKey = allSchedules.length > 0 ? findNormalizedLocoNumberKey(allSchedules[0]) : undefined;
+    const schedules = scheduleLocoKey
+      ? allSchedules.filter(s => String(s[scheduleLocoKey])?.toUpperCase() === normalizedLocoNo)
+      : [];
+
+    const failureLocoKey = allFailures.length > 0 ? findNormalizedLocoNumberKey(allFailures[0]) : undefined;
+    const failures = failureLocoKey
+      ? allFailures.filter(f => String(f[failureLocoKey])?.toUpperCase() === normalizedLocoNo)
+      : [];
+    
+    const locoNoKeyMods = allWAG7Modifications.length > 0 ? findLocoNumberKey(allWAG7Modifications[0]) : undefined;
+    const wag7Modifications = locoNoKeyMods
+      ? allWAG7Modifications.filter(m => String(m[locoNoKeyMods])?.toUpperCase() === normalizedLocoNo)
+      : [];
+
+    return { details, schedules, failures, wag7Modifications, locoType };
+  }
+
+  if (locoType === 'WDG4') {
+    const [allSchedules, allFailures] = await Promise.all([
+        fetchSheet<LocoSchedule>(SHEET_NAMES.G4_Schedules, true),
+        fetchSheet<any>(SHEET_NAMES.G4_Failures, true), // Fetch as 'any' before transformation
+    ]);
+
+    const scheduleLocoKey = allSchedules.length > 0 ? findNormalizedLocoNumberKey(allSchedules[0]) : undefined;
+    const schedules = scheduleLocoKey
+      ? allSchedules.filter(s => String(s[scheduleLocoKey])?.toUpperCase() === normalizedLocoNo)
+      : [];
+    
+    const failureLocoKey = allFailures.length > 0 ? findNormalizedLocoNumberKey(allFailures[0]) : undefined;
+    const rawFailures = failureLocoKey
+      ? allFailures.filter(f => String(f[failureLocoKey])?.toUpperCase() === normalizedLocoNo)
+      : [];
+
+    const failures = rawFailures.map(transformWDG4Failure);
+    
+    return { details, schedules, failures, wag7Modifications: [], locoType };
+  }
+  
+  // Fallback for safety, though the initial check should handle this.
+  return { details: null, schedules: [], failures: [], wag7Modifications: [], locoType: null };
 };
