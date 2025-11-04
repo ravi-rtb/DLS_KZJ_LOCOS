@@ -25,6 +25,7 @@ const App = () => {
     schedules: LocoSchedule[];
     failures: TractionFailure[];
     wag7Modifications: WAG7Modification[];
+    locoType: 'WAG7' | 'WDG4' | null;
   } | null>(null);
   const [view, setView] = useState<'home' | 'summary' | 'failuresSummary'>('home');
   const [allLocoNumbers, setAllLocoNumbers] = useState<string[]>([]);
@@ -92,7 +93,7 @@ const App = () => {
       <div className="max-w-4xl mx-auto">
 
         <p className="text-center text-text-secondary mt-8 mb-6">
-          Search for a KZJD WAG7 locomotive number or explore the summary reports.
+          Search for a locomotive number or explore the summary reports.
         </p>
         <SearchBar onSearch={handleSearch} isLoading={isLoading} suggestions={allLocoNumbers} />
 
@@ -150,14 +151,16 @@ const App = () => {
             </h2>
 
             <LocoDetailsCard details={data.details} locoNo={locoNo} />
-
-            <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
-                <ClipboardDocumentListIcon className="h-6 w-6 mr-3" />
-                WAG7 Modifications for #{locoNo}
-              </h2>
-              <WAG7ModificationsList modifications={data.wag7Modifications} />
-            </div>
+            
+            {data.locoType === 'WAG7' && (
+              <div className="bg-bg-card p-6 rounded-lg shadow-lg">
+                <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
+                  <ClipboardDocumentListIcon className="h-6 w-6 mr-3" />
+                  WAG7 Modifications for #{locoNo}
+                </h2>
+                <WAG7ModificationsList modifications={data.wag7Modifications} />
+              </div>
+            )}
             
             <div className="bg-bg-card p-6 rounded-lg shadow-lg">
               <h2 className="text-xl font-bold text-brand-primary flex items-center mb-4">
