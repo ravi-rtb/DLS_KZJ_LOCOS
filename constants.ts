@@ -12,10 +12,16 @@ export const SPREADSHEET_ID = '1oVY3a7LrG4zn2oVkW88bi31uZqGdw_mb-YHk2-NVqKQ';
 // The exact names of the sheets (tabs) in your Google Sheet document.
 // If you rename a sheet in your document, you must update it here.
 export const SHEET_NAMES = {
+  // WAG7 Sheets
   Loco_list: 'Loco_list',
   Loco_Schedules: 'Loco_Schedules',
   Traction_failures: 'Traction_failures',
   WAG7_Modifications: 'WAG7_Modifications',
+  
+  // WDG4 Sheets
+  G4_list: 'G4_list',
+  G4_Schedules: 'G4_Schedules',
+  G4_Failures: 'G4_Failures',
 };
 
 // URL for the external documents folder.

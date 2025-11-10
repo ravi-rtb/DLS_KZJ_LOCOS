@@ -31,13 +31,11 @@ export interface TractionFailure {
   elocosaf: string;
   documentlink?: string;
   medialink?: string;
-  // FIX: Updated index signature to be compatible with optional properties.
-  // This resolves an issue where properties were being inferred as `unknown`
-  // because the original type definition was inconsistent.
+  investigationstatus?: string;
+  icms?: string; // Added for WDG4 failure categorization
   [key: string]: string | undefined;
 }
 
-// FIX: Add missing WAGModification interface to resolve module export error.
 export interface WAGModification {
   [key: string]: string;
 }
