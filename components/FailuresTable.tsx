@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import type { TractionFailure, UserProfile } from '../types';
 import { TableCellsIcon, ChevronUpIcon, ChevronDownIcon, PhotoIcon, PencilIcon, LinkIcon } from './Icons';
@@ -10,9 +11,10 @@ interface FailuresTableProps {
   user: UserProfile | null;
   idToken: string | null;
   onDataUpdate: () => void;
+  locoType: 'WAG7' | 'WDG4' | null;
 }
 
-const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, onDataUpdate }) => {
+const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, onDataUpdate, locoType }) => {
   const [sortConfig, setSortConfig] = useState<{ key: keyof TractionFailure; direction: 'ascending' | 'descending' }>({ key: 'datefailed', direction: 'descending' });
   const [editingFailure, setEditingFailure] = useState<TractionFailure | null>(null);
 
@@ -84,6 +86,7 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
           idToken={idToken}
           onClose={() => setEditingFailure(null)}
           onSuccess={handleEditSuccess}
+          locoType={locoType}
         />
       )}
 

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification, UserProfile } from './types';
 import { getLocoData, getAllLocoNumbers } from './services/googleSheetService';
@@ -175,7 +176,7 @@ const App = () => {
                 <WrenchScrewdriverIcon className="h-6 w-6 mr-3" />
                 Online Failures for #{locoNo}
               </h2>
-              <FailuresTable failures={data.failures} user={user} idToken={idToken} onDataUpdate={handleDataUpdate} />
+              <FailuresTable failures={data.failures} user={user} idToken={idToken} onDataUpdate={handleDataUpdate} locoType={data.locoType} />
             </div>
 
           </div>
