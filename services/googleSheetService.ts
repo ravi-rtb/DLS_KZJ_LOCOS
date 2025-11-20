@@ -157,6 +157,7 @@ const transformWDG4Failure = (raw: any): TractionFailure => {
     responsibility: raw.shedsection || '',
     elocosaf: '',
     icms: raw.icms || '',
+    documentlink: raw.documentlink || '',
   };
 };
 
