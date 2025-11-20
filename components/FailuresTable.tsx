@@ -1,10 +1,10 @@
 
-
 import React, { useState, useMemo } from 'react';
 import type { TractionFailure, UserProfile } from '../types';
 import { TableCellsIcon, ChevronUpIcon, ChevronDownIcon, PhotoIcon, PencilIcon, LinkIcon } from './Icons';
 import { parseDateDDMMYY } from '../services/googleSheetService';
 import EditFailureModal from './EditFailureModal';
+import MediaGalleryModal, { MediaItem } from './MediaGalleryModal';
 
 interface FailuresTableProps {
   failures: TractionFailure[];
@@ -17,6 +17,7 @@ interface FailuresTableProps {
 const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, onDataUpdate, locoType }) => {
   const [sortConfig, setSortConfig] = useState<{ key: keyof TractionFailure; direction: 'ascending' | 'descending' }>({ key: 'datefailed', direction: 'descending' });
   const [editingFailure, setEditingFailure] = useState<TractionFailure | null>(null);
+  const [galleryItems, setGalleryItems] = useState<MediaItem[] | null>(null);
 
   const sortedFailures = useMemo(() => {
     let sortableItems = [...failures];
@@ -62,6 +63,35 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
       : <ChevronDownIcon className="h-4 w-4 text-text-primary" />;
   };
 
+  const handleMediaClick = (e: React.MouseEvent, link: string) => {
+    // Check if it is a Folder link (legacy support)
+    if (link.includes('/folders/')) {
+      // Let default behavior happen (open in new tab) or explicitly open it
+      return;
+    }
+
+    e.preventDefault();
+    // Split comma-separated links and clean them
+    // Parse format: "URL | Name" or just "URL"
+    const items: MediaItem[] = link.split(',').map((itemStr, index) => {
+        const parts = itemStr.split('|');
+        const url = parts[0].trim();
+        const label = parts.length > 1 ? parts[1].trim() : `Media ${index + 1}`;
+        return { url, label };
+    }).filter(l => l.url.length > 0);
+
+    if (items.length > 0) {
+      setGalleryItems(items);
+    }
+  };
+
+  const handleEditSuccess = () => {
+    setEditingFailure(null);
+    onDataUpdate();
+  }
+  
+  const cutoffDate = useMemo(() => new Date(Date.UTC(2024, 3, 1)), []); // April is month 3
+
   if (failures.length === 0) {
     return (
       <div className="text-center py-6 bg-gray-50 rounded-lg">
@@ -71,15 +101,15 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
     );
   }
 
-  const handleEditSuccess = () => {
-    setEditingFailure(null);
-    onDataUpdate();
-  }
-  
-  const cutoffDate = useMemo(() => new Date(Date.UTC(2024, 3, 1)), []); // April is month 3
-
   return (
     <>
+      {galleryItems && (
+        <MediaGalleryModal 
+          mediaItems={galleryItems} 
+          onClose={() => setGalleryItems(null)} 
+        />
+      )}
+
       {editingFailure && idToken && (
         <EditFailureModal
           failure={editingFailure}
@@ -153,8 +183,9 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                       href={failure.medialink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block text-brand-secondary hover:text-brand-primary ml-2"
-                      title="View Media in Google Drive"
+                      onClick={(e) => handleMediaClick(e, failure.medialink!)}
+                      className="inline-block text-brand-secondary hover:text-brand-primary ml-2 cursor-pointer"
+                      title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
                       aria-label="View media for this failure"
                     >
                       <PhotoIcon className="h-5 w-5" />
@@ -241,8 +272,9 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                           href={failure.medialink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-1"
-                          title="View Media in Google Drive"
+                          onClick={(e) => handleMediaClick(e, failure.medialink!)}
+                          className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-1 cursor-pointer"
+                          title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
                           aria-label="View media for this failure"
                         >
                           <PhotoIcon className="h-4 w-4" />

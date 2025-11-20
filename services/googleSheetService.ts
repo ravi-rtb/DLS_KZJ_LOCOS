@@ -158,6 +158,7 @@ const transformWDG4Failure = (raw: any): TractionFailure => {
     elocosaf: '',
     icms: raw.icms || '',
     documentlink: raw.documentlink || '',
+    medialink: raw.medialink || '',
   };
 };
 
