@@ -1,4 +1,5 @@
 
+
 // IMPORTANT: Replace with the Client ID you created in the Google Cloud Console.
 export const GOOGLE_CLIENT_ID = '999272865261-b3vf4mvie07h0ag72taqc2dnatihjhfd.apps.googleusercontent.com';
 
@@ -52,3 +53,10 @@ export const FRIENDLY_LABELS: { [key: string]: string } = {
   sch: 'Schedule',
   remarks: 'Remarks',
 };
+
+// Emails authorized to access Meeting Mode
+export const AUTHORIZED_MEETING_EMAILS = [
+  'techcelljedslkzj@gmail.com',
+  'techcelldlskzj@gmail.com',
+  // Add more emails here if needed
+];

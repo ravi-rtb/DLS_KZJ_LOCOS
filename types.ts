@@ -32,6 +32,7 @@ export interface TractionFailure {
   documentlink?: string;
   medialink?: string;
   investigationstatus?: string;
+  icms?: string; // Added for WDG4 failure categorization
   [key: string]: string | undefined;
 }
 
