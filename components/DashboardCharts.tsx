@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { getAllFailures, parseDateDDMMYY } from '../services/googleSheetService';
+import { getAllWag7Failures, parseDateDDMMYY } from '../services/googleSheetService';
 import type { TractionFailure } from '../types';
 import Loader from './Loader';
 import ErrorMessage from './ErrorMessage';
@@ -199,7 +200,7 @@ const DashboardCharts = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getAllFailures();
+        const data = await getAllWag7Failures();
         setFailures(data);
       } catch (err)
  {
@@ -377,13 +378,17 @@ const DashboardCharts = () => {
     const equipments = Object.keys(dataByEquipmentAndResp).sort((a, b) => equipmentTotals[b] - equipmentTotals[a]);
     const allUniqueResponsibilities = [...new Set(filtered.map((f: TractionFailure) => f.responsibility || 'N/A'))];
 
-    const responsibilityData = allUniqueResponsibilities.map(resp => ({
-        name: resp,
+    // FIX: Explicitly type `responsibilityData` to resolve incorrect type inference by TypeScript.
+    // This ensures `r.name` is correctly identified as a string in the `.find()` and `.filter()` methods below,
+    // resolving the "No overload matches this call" error.
+    const responsibilityData: { name: string; total: number }[] = allUniqueResponsibilities.map(resp => ({
+        // FIX: `resp` is inferred as `unknown`, causing a type mismatch. Casting to String ensures type safety.
+        name: String(resp),
         total: filtered.filter((f: TractionFailure) => (f.responsibility || 'N/A') === resp).length
     }));
 
-    const othResponsibilityData = responsibilityData.find((r: { name: string }) => r.name.toUpperCase() === 'OTH');
-    const otherResponsibilitiesData = responsibilityData.filter((r: { name: string }) => r.name.toUpperCase() !== 'OTH');
+    const othResponsibilityData = responsibilityData.find(r => r.name.toUpperCase() === 'OTH');
+    const otherResponsibilitiesData = responsibilityData.filter(r => r.name.toUpperCase() !== 'OTH');
     otherResponsibilitiesData.sort((a, b) => b.total - a.total);
     const sortedResponsibilities = [...otherResponsibilitiesData.map(r => r.name)];
     if (othResponsibilityData) {

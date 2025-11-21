@@ -11,9 +11,10 @@ interface EditFailureModalProps {
   idToken: string;
   onClose: () => void;
   onSuccess: () => void;
+  locoType: 'WAG7' | 'WDG4' | null;
 }
 
-const EditFailureModal: React.FC<EditFailureModalProps> = ({ failure, idToken, onClose, onSuccess }) => {
+const EditFailureModal: React.FC<EditFailureModalProps> = ({ failure, idToken, onClose, onSuccess, locoType }) => {
   const [causeOfFailure, setCauseOfFailure] = useState(failure.causeoffailure || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +23,17 @@ const EditFailureModal: React.FC<EditFailureModalProps> = ({ failure, idToken, o
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    // --- FIX STARTS HERE ---
+    // Added a more robust check to validate the locoType before sending the request.
+    // This prevents the backend error by catching the issue on the client-side first.
+    if (locoType !== 'WAG7' && locoType !== 'WDG4') {
+      const errorMessage = `The locomotive type ("${locoType || 'Not Found'}") is invalid. This is required to save the record. Please try a hard refresh (Ctrl+Shift+R) of the application.`;
+      setError(errorMessage);
+      setIsLoading(false);
+      return;
+    }
+    // --- FIX ENDS HERE ---
 
     try {
       const response = await fetch(APPS_SCRIPT_URL, {
@@ -35,6 +47,7 @@ const EditFailureModal: React.FC<EditFailureModalProps> = ({ failure, idToken, o
           responsibility: failure.responsibility || '', // Added for authorization checks
           oldCauseOfFailure: failure.causeoffailure || '', // For logging
           newCauseOfFailure: causeOfFailure,
+          locoType: locoType,
           idToken: idToken,
         }),
       });

@@ -4,17 +4,20 @@ import type { TractionFailure, UserProfile } from '../types';
 import { TableCellsIcon, ChevronUpIcon, ChevronDownIcon, PhotoIcon, PencilIcon, LinkIcon } from './Icons';
 import { parseDateDDMMYY } from '../services/googleSheetService';
 import EditFailureModal from './EditFailureModal';
+import MediaGalleryModal, { MediaItem } from './MediaGalleryModal';
 
 interface FailuresTableProps {
   failures: TractionFailure[];
   user: UserProfile | null;
   idToken: string | null;
   onDataUpdate: () => void;
+  locoType: 'WAG7' | 'WDG4' | null;
 }
 
-const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, onDataUpdate }) => {
+const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, onDataUpdate, locoType }) => {
   const [sortConfig, setSortConfig] = useState<{ key: keyof TractionFailure; direction: 'ascending' | 'descending' }>({ key: 'datefailed', direction: 'descending' });
   const [editingFailure, setEditingFailure] = useState<TractionFailure | null>(null);
+  const [galleryItems, setGalleryItems] = useState<MediaItem[] | null>(null);
 
   const sortedFailures = useMemo(() => {
     let sortableItems = [...failures];
@@ -60,6 +63,45 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
       : <ChevronDownIcon className="h-4 w-4 text-text-primary" />;
   };
 
+  const handleGalleryClick = (e: React.MouseEvent, link: string, type: 'media' | 'doc', locoNo?: string) => {
+    // Check if it is a Folder link (legacy support) - open in new tab
+    if (link.includes('/folders/')) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation(); // Stop row click propagation if any
+
+    // Parse format: "URL | Name" or just "URL"
+    const items: MediaItem[] = link.split(',').map((itemStr, index) => {
+        const parts = itemStr.split('|');
+        const url = parts[0].trim();
+        let label = '';
+        
+        if (parts.length > 1) {
+             label = parts[1].trim();
+        } else {
+             if (type === 'media') {
+                 label = `Media ${index + 1}`;
+             } else {
+                 label = `Document ${index + 1}${locoNo ? ` - ${locoNo}` : ''}`;
+             }
+        }
+        return { url, label };
+    }).filter(l => l.url.length > 0);
+
+    if (items.length > 0) {
+      setGalleryItems(items);
+    }
+  };
+
+  const handleEditSuccess = () => {
+    setEditingFailure(null);
+    onDataUpdate();
+  }
+  
+  const cutoffDate = useMemo(() => new Date(Date.UTC(2024, 3, 1)), []); // April is month 3
+
   if (failures.length === 0) {
     return (
       <div className="text-center py-6 bg-gray-50 rounded-lg">
@@ -69,21 +111,22 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
     );
   }
 
-  const handleEditSuccess = () => {
-    setEditingFailure(null);
-    onDataUpdate();
-  }
-  
-  const cutoffDate = useMemo(() => new Date(Date.UTC(2024, 3, 1)), []); // April is month 3
-
   return (
     <>
+      {galleryItems && (
+        <MediaGalleryModal 
+          mediaItems={galleryItems} 
+          onClose={() => setGalleryItems(null)} 
+        />
+      )}
+
       {editingFailure && idToken && (
         <EditFailureModal
           failure={editingFailure}
           idToken={idToken}
           onClose={() => setEditingFailure(null)}
           onSuccess={handleEditSuccess}
+          locoType={locoType}
         />
       )}
 
@@ -128,9 +171,10 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                       href={failure.documentlink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors"
-                      title={`Open document for loco #${failure.locono}`}
-                      aria-label={`Open document for loco number ${failure.locono}`}
+                      onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
+                      className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors cursor-pointer"
+                      title={`View document for loco #${failure.locono}`}
+                      aria-label={`View document for loco number ${failure.locono}`}
                     >
                       {failure.locono}
                     </a>
@@ -150,8 +194,9 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                       href={failure.medialink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block text-brand-secondary hover:text-brand-primary ml-2"
-                      title="View Media in Google Drive"
+                      onClick={(e) => handleGalleryClick(e, failure.medialink!, 'media')}
+                      className="inline-block text-brand-secondary hover:text-brand-primary ml-2 cursor-pointer"
+                      title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
                       aria-label="View media for this failure"
                     >
                       <PhotoIcon className="h-5 w-5" />
@@ -210,9 +255,10 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                       href={failure.documentlink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
-                      title={`Open document for loco #${failure.locono}`}
-                      aria-label={`Open document for loco number ${failure.locono}`}
+                      onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition-colors cursor-pointer"
+                      title={`View document for loco #${failure.locono}`}
+                      aria-label={`View document for loco number ${failure.locono}`}
                     >
                       <LinkIcon className="h-4 w-4" />
                       View Doc
@@ -238,8 +284,9 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                           href={failure.medialink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-1"
-                          title="View Media in Google Drive"
+                          onClick={(e) => handleGalleryClick(e, failure.medialink!, 'media')}
+                          className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-1 cursor-pointer"
+                          title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
                           aria-label="View media for this failure"
                         >
                           <PhotoIcon className="h-4 w-4" />
