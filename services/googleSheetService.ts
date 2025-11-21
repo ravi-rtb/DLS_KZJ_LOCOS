@@ -1,4 +1,5 @@
 
+
 import { SPREADSHEET_ID, SHEET_NAMES } from '../constants';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } from '../types';
 
@@ -153,9 +154,11 @@ const transformWDG4Failure = (raw: any): TractionFailure => {
     causeoffailure: raw.shedinvestigation || '',
     equipment: raw.system || '',
     component: raw.componentfailed || '',
-    // These fields do not exist in the WDG4 sheet, so default to empty.
-    responsibility: '',
+    responsibility: raw.shedsection || '',
     elocosaf: '',
+    icms: raw.icms || '',
+    documentlink: raw.documentlink || '',
+    medialink: raw.medialink || '',
   };
 };
 
@@ -196,11 +199,20 @@ export const getAllWAG7Modifications = async (): Promise<WAG7Modification[]> => 
 
 
 /**
- * Fetches all traction failure data from the sheet.
+ * Fetches all WAG7 traction failure data from the sheet.
  * @returns An array of all failure records.
  */
-export const getAllFailures = async (): Promise<TractionFailure[]> => {
+export const getAllWag7Failures = async (): Promise<TractionFailure[]> => {
   return fetchSheet<TractionFailure>(SHEET_NAMES.Traction_failures, true); // Normalize keys
+};
+
+/**
+ * Fetches all WDG4 traction failure data from the sheet.
+ * @returns An array of all failure records.
+ */
+export const getAllWdg4Failures = async (): Promise<TractionFailure[]> => {
+  const rawFailures = await fetchSheet<any>(SHEET_NAMES.G4_Failures, true);
+  return rawFailures.map(transformWDG4Failure);
 };
 
 
