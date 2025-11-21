@@ -63,20 +63,30 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
       : <ChevronDownIcon className="h-4 w-4 text-text-primary" />;
   };
 
-  const handleMediaClick = (e: React.MouseEvent, link: string) => {
-    // Check if it is a Folder link (legacy support)
+  const handleGalleryClick = (e: React.MouseEvent, link: string, type: 'media' | 'doc', locoNo?: string) => {
+    // Check if it is a Folder link (legacy support) - open in new tab
     if (link.includes('/folders/')) {
-      // Let default behavior happen (open in new tab) or explicitly open it
       return;
     }
 
     e.preventDefault();
-    // Split comma-separated links and clean them
+    e.stopPropagation(); // Stop row click propagation if any
+
     // Parse format: "URL | Name" or just "URL"
     const items: MediaItem[] = link.split(',').map((itemStr, index) => {
         const parts = itemStr.split('|');
         const url = parts[0].trim();
-        const label = parts.length > 1 ? parts[1].trim() : `Media ${index + 1}`;
+        let label = '';
+        
+        if (parts.length > 1) {
+             label = parts[1].trim();
+        } else {
+             if (type === 'media') {
+                 label = `Media ${index + 1}`;
+             } else {
+                 label = `Document ${index + 1}${locoNo ? ` - ${locoNo}` : ''}`;
+             }
+        }
         return { url, label };
     }).filter(l => l.url.length > 0);
 
@@ -161,9 +171,10 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                       href={failure.documentlink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors"
-                      title={`Open document for loco #${failure.locono}`}
-                      aria-label={`Open document for loco number ${failure.locono}`}
+                      onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
+                      className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors cursor-pointer"
+                      title={`View document for loco #${failure.locono}`}
+                      aria-label={`View document for loco number ${failure.locono}`}
                     >
                       {failure.locono}
                     </a>
@@ -183,7 +194,7 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                       href={failure.medialink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => handleMediaClick(e, failure.medialink!)}
+                      onClick={(e) => handleGalleryClick(e, failure.medialink!, 'media')}
                       className="inline-block text-brand-secondary hover:text-brand-primary ml-2 cursor-pointer"
                       title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
                       aria-label="View media for this failure"
@@ -244,9 +255,10 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                       href={failure.documentlink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
-                      title={`Open document for loco #${failure.locono}`}
-                      aria-label={`Open document for loco number ${failure.locono}`}
+                      onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition-colors cursor-pointer"
+                      title={`View document for loco #${failure.locono}`}
+                      aria-label={`View document for loco number ${failure.locono}`}
                     >
                       <LinkIcon className="h-4 w-4" />
                       View Doc
@@ -272,7 +284,7 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                           href={failure.medialink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={(e) => handleMediaClick(e, failure.medialink!)}
+                          onClick={(e) => handleGalleryClick(e, failure.medialink!, 'media')}
                           className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-1 cursor-pointer"
                           title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
                           aria-label="View media for this failure"
