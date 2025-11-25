@@ -730,14 +730,6 @@ const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
                   <CollapsibleSummarySection title="ICMS Failures (Shed)" isExpanded={expandedSummaries[fy]?.has('a')} onToggle={() => toggleSummary(fy, 'a')}>
                     <GroupedSummaryTable data={processedData[fy].summaryA} onCellClick={onCellClick} />
                   </CollapsibleSummarySection>
-                  
-                  <CollapsibleSummarySection title="ICMS Failures (Based on eLocos)" isExpanded={expandedSummaries[fy]?.has('b')} onToggle={() => toggleSummary(fy, 'b')}>
-                     <GroupedSummaryTable data={processedData[fy].summaryB} onCellClick={onCellClick} />
-                  </CollapsibleSummarySection>
-
-                  <CollapsibleSummarySection title="Punctuality - As per eLocos" isExpanded={expandedSummaries[fy]?.has('e')} onToggle={() => toggleSummary(fy, 'e')}>
-                     <div className="space-y-4"><SummaryTable data={processedData[fy].summaryE_punc} onCellClick={onCellClick} /></div>
-                  </CollapsibleSummarySection>
 
                   <CollapsibleSummarySection title="Messages" isExpanded={expandedSummaries[fy]?.has('c')} onToggle={() => toggleSummary(fy, 'c')}>
                     <GroupedSummaryTable data={processedData[fy].summaryC} onCellClick={onCellClick} />
@@ -745,6 +737,14 @@ const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
                   
                   <CollapsibleSummarySection title="Sections summary" isExpanded={expandedSummaries[fy]?.has('d')} onToggle={() => toggleSummary(fy, 'd')}>
                     <SummaryTable data={processedData[fy].summaryD} onCellClick={onCellClick} />
+                  </CollapsibleSummarySection>
+                                  
+                  <CollapsibleSummarySection title="ICMS Failures (Based on eLocos)" isExpanded={expandedSummaries[fy]?.has('b')} onToggle={() => toggleSummary(fy, 'b')}>
+                     <GroupedSummaryTable data={processedData[fy].summaryB} onCellClick={onCellClick} />
+                  </CollapsibleSummarySection>
+
+                  <CollapsibleSummarySection title="Punctuality - As per eLocos" isExpanded={expandedSummaries[fy]?.has('e')} onToggle={() => toggleSummary(fy, 'e')}>
+                     <div className="space-y-4"><SummaryTable data={processedData[fy].summaryE_punc} onCellClick={onCellClick} /></div>
                   </CollapsibleSummarySection>
                 </div>
             </div>
