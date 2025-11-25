@@ -1,9 +1,8 @@
 
-
 import React, { useState, useCallback, useEffect } from 'react';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification, UserProfile } from './types';
 import { getLocoData, getAllLocoNumbers } from './services/googleSheetService';
-import { DOCUMENTS_URL } from './constants';
+import { DOCUMENTS_URL, AUTHORIZED_MEETING_EMAILS } from './constants';
 import SearchBar from './components/SearchBar';
 import Loader from './components/Loader';
 import ErrorMessage from './components/ErrorMessage';
@@ -11,11 +10,12 @@ import LocoDetailsCard from './components/LocoDetailsCard';
 import SchedulesTable from './components/SchedulesTable';
 import FailuresTable from './components/FailuresTable';
 import WAG7ModificationsList from './components/WAG7ModificationsList';
-import { WrenchScrewdriverIcon, CalendarDaysIcon, ClipboardDocumentListIcon, FolderIcon, TrainIcon } from './components/Icons';
+import { WrenchScrewdriverIcon, CalendarDaysIcon, ClipboardDocumentListIcon, FolderIcon, TrainIcon, TableCellsIcon } from './components/Icons';
 import ModificationsSummary from './components/ModificationsSummary';
 import FailuresSummary from './components/FailuresSummary';
 import DashboardCharts from './components/DashboardCharts';
 import Auth from './components/Auth';
+import MeetingMode from './components/MeetingMode';
 
 const App = () => {
   const [locoNo, setLocoNo] = useState<string>('');
@@ -28,7 +28,7 @@ const App = () => {
     wag7Modifications: WAG7Modification[];
     locoType: 'WAG7' | 'WDG4' | null;
   } | null>(null);
-  const [view, setView] = useState<'home' | 'summary' | 'failuresSummary'>('home');
+  const [view, setView] = useState<'home' | 'summary' | 'failuresSummary' | 'meeting'>('home');
   const [allLocoNumbers, setAllLocoNumbers] = useState<string[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
@@ -88,6 +88,9 @@ const App = () => {
     }
   }, [locoNo, fetchDataForLoco]);
 
+  // Check if user is authorized for meeting mode
+  const isAuthorizedForMeeting = user && user.email && AUTHORIZED_MEETING_EMAILS.includes(user.email);
+
 
   const renderHomePage = () => (
     <main className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -136,6 +139,19 @@ const App = () => {
             <p className="text-sm text-text-secondary">Access technical documents, reports, and manuals in Google Drive.</p>
           </a>
         </div>
+
+        {/* Authorized Meeting Mode Button */}
+        {isAuthorizedForMeeting && (
+           <div className="flex justify-center mb-8">
+             <button
+                onClick={() => setView('meeting')}
+                className="flex items-center gap-2 px-6 py-3 bg-brand-accent text-black font-bold rounded-full shadow-md hover:bg-yellow-400 transition-transform transform hover:scale-105"
+             >
+                <TableCellsIcon className="h-5 w-5" />
+                Enter Meeting Mode
+             </button>
+           </div>
+        )}
         
         {/* Render charts only on initial home screen */}
         {!data && !isLoading && !error && <DashboardCharts />}
@@ -197,8 +213,13 @@ const App = () => {
     </main>
   );
 
+  const renderMeetingMode = () => (
+    <MeetingMode onBack={() => setView('home')} />
+  );
+
   return (
     <div className="min-h-screen font-sans text-text-primary">
+      {/* Hide header when in Meeting Mode (for print view cleaner look) or keep it based on preference. Kept for navigation. */}
       <header className="bg-brand-primary shadow-md print:hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div 
@@ -221,6 +242,7 @@ const App = () => {
       {view === 'home' && renderHomePage()}
       {view === 'summary' && renderSummaryView()}
       {view === 'failuresSummary' && renderFailuresSummaryView()}
+      {view === 'meeting' && renderMeetingMode()}
 
 
       <footer className="text-center py-6 text-text-secondary text-sm print:hidden">

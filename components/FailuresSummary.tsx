@@ -379,6 +379,52 @@ const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: Tracti
 };
 
 const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (failures: TractionFailure[]) => void }> = ({ data, onCellClick }) => {
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
+
+  const requestSort = (key: string) => {
+      let direction: 'ascending' | 'descending' = 'ascending';
+      if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+          direction = 'descending';
+      }
+      setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: string) => {
+      if (sortConfig.key !== key) return null;
+      return sortConfig.direction === 'ascending' 
+        ? <ChevronUpIcon className="h-4 w-4 inline-block ml-1 text-text-primary" /> 
+        : <ChevronDownIcon className="h-4 w-4 inline-block ml-1 text-text-primary" />;
+  };
+
+  const sortRows = (rows: SummaryRow[]) => {
+      const sorted = [...rows];
+      if (sortConfig.key) {
+          sorted.sort((a, b) => {
+              let valA, valB;
+              if (sortConfig.key === 'name') {
+                  valA = a.name.toLowerCase();
+                  valB = b.name.toLowerCase();
+              } else if (sortConfig.key === 'total') {
+                  valA = a.total.count;
+                  valB = b.total.count;
+              } else { // Monthly data sort
+                  const monthIndex = data.headers.indexOf(sortConfig.key);
+                  if(monthIndex > -1){
+                      valA = a.monthlyData[monthIndex].count;
+                      valB = b.monthlyData[monthIndex].count;
+                  } else {
+                      return 0; // Should not happen
+                  }
+              }
+
+              if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
+              if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
+              return 0;
+          });
+      }
+      return sorted;
+  };
+
   const renderRow = (row: SummaryRow, isSubtotal = false) => (
     <tr key={row.name} className={isSubtotal ? "bg-gray-200 font-semibold" : "hover:bg-gray-50"}>
       <td className="px-3 py-2 font-medium text-text-primary whitespace-nowrap sticky left-0 bg-inherit">{row.name}</td>
@@ -401,6 +447,13 @@ const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (fa
   if (totalGroupsAndOthers === 0) {
      return <p className="text-sm text-text-secondary px-3 py-2">No data available for this summary.</p>;
   }
+  
+  // Sort rows within each group
+  const sortedGroups = (data.groups || []).map(group => ({
+    ...group,
+    rows: sortRows(group.rows)
+  }));
+  const sortedOthers = sortRows(data.others || []);
 
   return (
     <div className="overflow-x-auto border rounded-lg">
@@ -408,13 +461,27 @@ const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (fa
         <thead className="bg-gray-100">
           <tr><th colSpan={14} className="px-3 py-2 text-left font-semibold text-text-primary bg-gray-200">{data.title}</th></tr>
           <tr>
-            <th className="px-3 py-2 text-left font-semibold text-text-secondary sticky left-0 bg-gray-100">{data.groupTitle}</th>
-            {data.headers.map(h => <th key={h} className="px-3 py-2 font-semibold text-text-secondary w-20">{h}</th>)}
-            <th className="px-3 py-2 font-semibold text-text-secondary w-24">Total</th>
+            <th className="px-3 py-2 text-left font-semibold text-text-secondary sticky left-0 bg-gray-100">
+                <button onClick={() => requestSort('name')} className="flex items-center gap-1 transition-colors hover:text-text-primary">
+                    {data.groupTitle}{getSortIcon('name')}
+                </button>
+            </th>
+            {data.headers.map(h => 
+                <th key={h} className="px-3 py-2 font-semibold text-text-secondary w-20">
+                    <button onClick={() => requestSort(h)} className="transition-colors hover:text-text-primary">
+                        {h}{getSortIcon(h)}
+                    </button>
+                </th>
+            )}
+            <th className="px-3 py-2 font-semibold text-text-secondary w-24">
+                <button onClick={() => requestSort('total')} className="transition-colors hover:text-text-primary">
+                    Total{getSortIcon('total')}
+                </button>
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {data.groups && data.groups.map(group => (
+          {sortedGroups.map(group => (
             <React.Fragment key={group.name}>
               {group.rows.length > 0 && (
                 <>
@@ -425,10 +492,10 @@ const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (fa
               )}
             </React.Fragment>
           ))}
-          {data.others && data.others.length > 0 && (
+          {sortedOthers.length > 0 && (
             <>
               <tr className="bg-gray-100 font-bold"><td colSpan={14} className="px-3 py-2 text-left text-text-primary">Others</td></tr>
-              {data.others.map(row => renderRow(row))}
+              {sortedOthers.map(row => renderRow(row))}
             </>
           )}
         </tbody>
@@ -730,7 +797,7 @@ const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
                   <CollapsibleSummarySection title="ICMS Failures (Shed)" isExpanded={expandedSummaries[fy]?.has('a')} onToggle={() => toggleSummary(fy, 'a')}>
                     <GroupedSummaryTable data={processedData[fy].summaryA} onCellClick={onCellClick} />
                   </CollapsibleSummarySection>
-
+                  
                   <CollapsibleSummarySection title="Messages" isExpanded={expandedSummaries[fy]?.has('c')} onToggle={() => toggleSummary(fy, 'c')}>
                     <GroupedSummaryTable data={processedData[fy].summaryC} onCellClick={onCellClick} />
                   </CollapsibleSummarySection>
@@ -738,7 +805,7 @@ const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
                   <CollapsibleSummarySection title="Sections summary" isExpanded={expandedSummaries[fy]?.has('d')} onToggle={() => toggleSummary(fy, 'd')}>
                     <SummaryTable data={processedData[fy].summaryD} onCellClick={onCellClick} />
                   </CollapsibleSummarySection>
-                                  
+                  
                   <CollapsibleSummarySection title="ICMS Failures (Based on eLocos)" isExpanded={expandedSummaries[fy]?.has('b')} onToggle={() => toggleSummary(fy, 'b')}>
                      <GroupedSummaryTable data={processedData[fy].summaryB} onCellClick={onCellClick} />
                   </CollapsibleSummarySection>

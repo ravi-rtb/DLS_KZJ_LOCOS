@@ -1,5 +1,4 @@
 
-
 import { SPREADSHEET_ID, SHEET_NAMES } from '../constants';
 import type { LocoDetails, LocoSchedule, TractionFailure, WAG7Modification } from '../types';
 
@@ -159,6 +158,10 @@ const transformWDG4Failure = (raw: any): TractionFailure => {
     icms: raw.icms || '',
     documentlink: raw.documentlink || '',
     medialink: raw.medialink || '',
+    trainno: raw.trainno || '',
+    load: raw.load || '',
+    station: raw.station || '',
+    schparticulars: raw.schparticulars || '',
   };
 };
 

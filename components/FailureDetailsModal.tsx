@@ -117,36 +117,54 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
               <table className="min-w-full text-sm table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[8%]">Date Failed</th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">Loco No. +MU With</th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">
+                        Date Failed<br />
+                        <span className="text-[10px] font-normal normal-case text-gray-500">Train No</span>
+                    </th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[14%]">
+                        Loco No. +MU With<br />
+                        <span className="text-[10px] font-normal normal-case text-gray-500">Schedule Details</span>
+                    </th>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">ICMS/Message<br />Division<br />Railway</th>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[20%]">Brief Message</th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[25%]">Cause of Failure</th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[15%]">Equipment<br />Component</th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">Section</th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[24%]">Cause of Failure</th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">Equipment<br />Component</th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[8%]">Section</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {failures.map((failure, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="p-2 align-top text-text-primary whitespace-normal break-words">{failure.datefailed}</td>
                       <td className="p-2 align-top text-text-primary whitespace-normal break-words">
-                        {failure.documentlink ? (
-                          <a
-                            href={failure.documentlink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
-                            className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors cursor-pointer"
-                            title={`View document for loco #${failure.locono}`}
-                            aria-label={`View document for loco number ${failure.locono}`}
-                          >
-                            {failure.locono}
-                          </a>
-                        ) : (
-                          <span className="font-bold">{failure.locono}</span>
-                        )}
-                        {failure.muwith ? ` + ${failure.muwith}` : ''}
+                        <div>{failure.datefailed}</div>
+                        {failure.trainno && <div className="text-xs text-gray-500 font-medium mt-1">{failure.trainno}</div>}
+                      </td>
+                      <td className="p-2 align-top text-text-primary whitespace-normal break-words">
+                        <div>
+                            {failure.documentlink ? (
+                            <a
+                                href={failure.documentlink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
+                                className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors cursor-pointer"
+                                title={`View document for loco #${failure.locono}`}
+                                aria-label={`View document for loco number ${failure.locono}`}
+                            >
+                                {failure.locono}
+                            </a>
+                            ) : (
+                            <span className="font-bold">{failure.locono}</span>
+                            )}
+                            {failure.muwith ? ` + ${failure.muwith}` : ''}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                            {failure.schparticulars ? (
+                                <span className="block">{failure.schparticulars}</span>
+                            ) : (
+                                failure.lastsch && <span className="block">LS: {failure.lastsch} ({failure.lastschdate})</span>
+                            )}
+                        </div>
                       </td>
                       <td className="p-2 align-top text-text-primary whitespace-normal break-words">
                         {failure.icmsmessage && <p>{failure.icmsmessage}</p>}
