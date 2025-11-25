@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { TractionFailure } from '../types';
-import { PrinterIcon, FullScreenEnterIcon, FullScreenExitIcon, PhotoIcon } from './Icons';
+import { PrinterIcon, FullScreenEnterIcon, FullScreenExitIcon, PhotoIcon, ChevronUpIcon, ChevronDownIcon } from './Icons';
 import MediaGalleryModal, { MediaItem } from './MediaGalleryModal';
+import { parseDateDDMMYY } from '../services/googleSheetService';
 
 interface FailureDetailsModalProps {
   failures: TractionFailure[];
@@ -12,9 +13,50 @@ interface FailureDetailsModalProps {
 const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onClose }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [galleryItems, setGalleryItems] = useState<MediaItem[] | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof TractionFailure; direction: 'ascending' | 'descending' }>({ key: 'datefailed', direction: 'descending' });
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const sortedFailures = useMemo(() => {
+    let sortableItems = [...failures];
+    if (sortConfig.key) {
+      sortableItems.sort((a, b) => {
+        if (sortConfig.key === 'datefailed') {
+          const dateA = parseDateDDMMYY(a.datefailed || '');
+          const dateB = parseDateDDMMYY(b.datefailed || '');
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          if (dateA < dateB) return sortConfig.direction === 'ascending' ? -1 : 1;
+          if (dateA > dateB) return sortConfig.direction === 'ascending' ? 1 : -1;
+          return 0;
+        } else {
+          const valA = (a[sortConfig.key] || '').toString().toLowerCase();
+          const valB = (b[sortConfig.key] || '').toString().toLowerCase();
+          if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
+          if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
+          return 0;
+        }
+      });
+    }
+    return sortableItems;
+  }, [failures, sortConfig]);
+
+  const requestSort = (key: keyof TractionFailure) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: keyof TractionFailure) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'ascending'
+      ? <ChevronUpIcon className="h-4 w-4 inline-block ml-1" />
+      : <ChevronDownIcon className="h-4 w-4 inline-block ml-1" />;
   };
 
   const handleGalleryClick = (e: React.MouseEvent, link: string, type: 'media' | 'doc', locoNo?: string) => {
@@ -118,22 +160,41 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">
-                        Date Failed<br />
-                        <span className="text-[10px] font-normal normal-case text-gray-500">Train No</span>
+                        <div onClick={() => requestSort('datefailed')} className="cursor-pointer hover:text-text-primary transition-colors group">
+                            <div className="flex items-center gap-1">
+                                Date Failed {getSortIcon('datefailed')}
+                            </div>
+                            <span className="text-[10px] font-normal normal-case text-gray-500 group-hover:text-gray-700">Train No</span>
+                        </div>
                     </th>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[14%]">
                         Loco No. +MU With<br />
                         <span className="text-[10px] font-normal normal-case text-gray-500">Schedule Details</span>
                     </th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">ICMS/Message<br />Division<br />Railway</th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">
+                        <div onClick={() => requestSort('icmsmessage')} className="cursor-pointer hover:text-text-primary transition-colors">
+                             <div className="flex items-center gap-1">ICMS/Msg {getSortIcon('icmsmessage')}</div>
+                             <div>Division</div>
+                             <div>Railway</div>
+                        </div>
+                    </th>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[20%]">Brief Message</th>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[24%]">Cause of Failure</th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">Equipment<br />Component</th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[8%]">Section</th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">
+                        <div onClick={() => requestSort('equipment')} className="cursor-pointer hover:text-text-primary transition-colors">
+                            <div className="flex items-center gap-1">Equipment {getSortIcon('equipment')}</div>
+                            <div>Component</div>
+                        </div>
+                    </th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[8%]">
+                         <div onClick={() => requestSort('responsibility')} className="cursor-pointer hover:text-text-primary transition-colors flex items-center gap-1">
+                            Section {getSortIcon('responsibility')}
+                        </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {failures.map((failure, index) => (
+                  {sortedFailures.map((failure, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="p-2 align-top text-text-primary whitespace-normal break-words">
                         <div>{failure.datefailed}</div>
