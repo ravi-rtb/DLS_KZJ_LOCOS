@@ -48,13 +48,19 @@ const parseGvizData = <T,>(jsonString: string, normalizeKeys: boolean = true): T
       
       const cell = row.c[index];
       // Coerce all values to strings for consistency.
-      // Use the formatted value 'f' (e.g., for dates) if available, otherwise use the raw value 'v'.
-      if (cell === null || cell.v === null) {
+      // Priority: 
+      // 1. 'f' (formatted value) - Use this if available (handles dates and text in number cols).
+      // 2. 'v' (raw value) - Use this if 'f' is missing.
+      // 3. Empty string if both are missing.
+      
+      if (cell === null) {
         newRow[colName] = '';
       } else if (cell.f) {
         newRow[colName] = cell.f;
-      } else {
+      } else if (cell.v !== null && cell.v !== undefined) {
         newRow[colName] = String(cell.v);
+      } else {
+        newRow[colName] = '';
       }
     });
     return newRow as T;

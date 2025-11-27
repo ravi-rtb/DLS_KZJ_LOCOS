@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { getAllWAG7Modifications } from '../services/googleSheetService';
 import type { WAG7Modification } from '../types';
@@ -113,24 +114,31 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
           const allLocosForMod = allModifications
             .map(locoRecord => ({
               locoNo: String(locoRecord[locoNoKey] || ''),
-              status: String(locoRecord[modName] || '').trim(),
+              // Do NOT trim status initially to preserve raw data structure
+              status: String(locoRecord[modName] || ''),
             }))
             .filter(loco => loco.locoNo); // Ensure loco has a number
 
           // Define special conditions
           const upperTrimmedModName = trimmedModName.toUpperCase();
+          const isKavach = upperTrimmedModName.includes('KAVACH');
           const isCabAcMod = upperTrimmedModName === 'CAB AC';
           const isV3Mod = upperTrimmedModName.includes('MPCS V3') || upperTrimmedModName === 'LSIP';
 
-          if (isCabAcMod) {
+          if (isKavach) {
+             // Kavach: Count ANY non-empty value (text, dates, symbols).
+             // We check .trim().length > 0 to exclude cells that are purely whitespace, 
+             // but include any cell with visible text/numbers.
+             completedLocos = allLocosForMod.filter(loco => loco.status.trim().length > 0);
+          } else if (isCabAcMod) {
             // New rule for CAB AC: count and list only if status contains 'Working'
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('WORKING'));
           } else if (isV3Mod) {
             // Special rule: count and list only if status contains 'V3'
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('V3'));
           } else {
-            // Default rule: count and list if status is not empty
-            completedLocos = allLocosForMod.filter(loco => loco.status !== '');
+            // Default rule: count and list if status is not empty (ignoring whitespace)
+            completedLocos = allLocosForMod.filter(loco => loco.status.trim().length > 0);
           }
 
           return { 

@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import type { TractionFailure } from '../types';
-import { PrinterIcon, FullScreenEnterIcon, FullScreenExitIcon, PhotoIcon, ChevronUpIcon, ChevronDownIcon } from './Icons';
+import { PrinterIcon, FullScreenEnterIcon, FullScreenExitIcon, PhotoIcon, ChevronUpIcon, ChevronDownIcon, LinkIcon } from './Icons';
 import MediaGalleryModal, { MediaItem } from './MediaGalleryModal';
 import { parseDateDDMMYY } from '../services/googleSheetService';
 
@@ -155,7 +155,9 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
             <h2 className="text-xl font-bold text-center mb-4 hidden print:block">
               Failure Details ({failures.length} records)
             </h2>
-            <div className="overflow-x-auto">
+            
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full text-sm table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
@@ -257,6 +259,99 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                {sortedFailures.map((failure, index) => (
+                    <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
+                        <div className="flex justify-between items-start border-b pb-2 mb-3">
+                            <div>
+                                <p className="font-bold text-base text-brand-primary">
+                                    <span className="text-text-secondary font-medium">#{index + 1}</span> {failure.locono}
+                                    {failure.muwith ? ` + ${failure.muwith}` : ''}
+                                </p>
+                                <p className="text-text-secondary">
+                                    {failure.datefailed}
+                                    {failure.trainno && <span className="text-xs font-medium ml-2">({failure.trainno})</span>}
+                                </p>
+                            </div>
+                            {failure.documentlink && (
+                                <a
+                                    href={failure.documentlink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition-colors cursor-pointer"
+                                    title={`View document for loco #${failure.locono}`}
+                                    aria-label={`View document for loco number ${failure.locono}`}
+                                >
+                                    <LinkIcon className="h-4 w-4" />
+                                    View Doc
+                                </a>
+                            )}
+                        </div>
+
+                        <div className="space-y-3">
+                            {(failure.schparticulars || failure.lastsch) && (
+                                <div className="grid grid-cols-12 gap-2">
+                                    <div className="col-span-4"><p className="font-semibold text-text-secondary">Schedule</p></div>
+                                    <div className="col-span-8">
+                                        {failure.schparticulars ? (
+                                            <p className="text-text-primary">{failure.schparticulars}</p>
+                                        ) : (
+                                            <p className="text-text-primary">LS: {failure.lastsch} ({failure.lastschdate})</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-12 gap-2">
+                                <div className="col-span-4"><p className="font-semibold text-text-secondary">ICMS/Msg</p></div>
+                                <div className="col-span-8">
+                                    {failure.icmsmessage && <p className="text-text-primary">{failure.icmsmessage}</p>}
+                                    {(failure.div || failure.rly) && <p className="text-text-primary">{failure.div}/{failure.rly}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-2">
+                                <div className="col-span-4"><p className="font-semibold text-text-secondary">Message</p></div>
+                                <div className="col-span-8 text-text-primary">
+                                    <span>{failure.briefmessage}</span>
+                                    {failure.medialink && (
+                                        <a
+                                            href={failure.medialink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => handleGalleryClick(e, failure.medialink!, 'media')}
+                                            className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-1 cursor-pointer"
+                                            title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
+                                            aria-label="View media for this failure"
+                                        >
+                                            <PhotoIcon className="h-4 w-4" />
+                                            <span>View Media</span>
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-2">
+                                <div className="col-span-4"><p className="font-semibold text-text-secondary">Equipment</p></div>
+                                <div className="col-span-8"><p className="text-text-primary">{failure.equipment || ''}{failure.component ? ` - ${failure.component}` : ''}</p></div>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-2">
+                                <div className="col-span-4"><p className="font-semibold text-text-secondary">Section</p></div>
+                                <div className="col-span-8"><p className="text-text-primary">{failure.responsibility}</p></div>
+                            </div>
+
+                            <div className="pt-1">
+                                <p className="font-semibold text-text-secondary mb-1">Cause of Failure</p>
+                                <p className="text-text-primary bg-white p-2 border rounded-md w-full">{failure.causeoffailure}</p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
           </main>
         </div>
