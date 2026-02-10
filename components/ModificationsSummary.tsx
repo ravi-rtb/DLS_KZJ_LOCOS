@@ -146,6 +146,23 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
               count: completedLocos.length, 
               locos: completedLocos.sort((a, b) => a.locoNo.localeCompare(b.locoNo)) 
           };
+          
+          // Special logic for Shunting op. mod. (15KMPH) to add the "Updated" row
+          if (trimmedModName === 'Shunting op. mod. (15KMPH)') {
+              const updatedLocos = completedLocos.filter(loco => 
+                  loco.status.toUpperCase().includes('(N)')
+              );
+              
+              const updatedEntry: ModificationSummary = {
+                  name: 'Shunting op. mod. - Updated',
+                  count: updatedLocos.length,
+                  locos: updatedLocos.sort((a, b) => a.locoNo.localeCompare(b.locoNo))
+              };
+              
+              return [standardEntry, updatedEntry];
+          }
+
+          return [standardEntry];
         });
 
         setSummaryData(summary);
