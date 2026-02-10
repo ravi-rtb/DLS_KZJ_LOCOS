@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getAllWAG7Modifications } from '../services/googleSheetService';
 import type { WAG7Modification } from '../types';
 import Loader from './Loader';
@@ -107,46 +107,39 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
           k => k !== locoNoKey && !excludedMods.has(k)
         );
         
-        const summary = modificationKeys.map(modName => {
+        const summary = modificationKeys.flatMap(modName => {
           const trimmedModName = modName.trim();
           let completedLocos: { locoNo: string; status: string }[] = [];
 
           const allLocosForMod = allModifications
             .map(locoRecord => ({
               locoNo: String(locoRecord[locoNoKey] || ''),
-              // Do NOT trim status initially to preserve raw data structure
               status: String(locoRecord[modName] || ''),
             }))
-            .filter(loco => loco.locoNo); // Ensure loco has a number
+            .filter(loco => loco.locoNo && loco.locoNo.trim() !== '');
 
-          // Define special conditions
+          // Define special conditions for counting based on column name
           const upperTrimmedModName = trimmedModName.toUpperCase();
           const isKavach = upperTrimmedModName.includes('KAVACH');
           const isCabAcMod = upperTrimmedModName === 'CAB AC';
           const isV3Mod = upperTrimmedModName.includes('MPCS V3') || upperTrimmedModName === 'LSIP';
 
           if (isKavach) {
-             // Kavach: Count ANY non-empty value (text, dates, symbols).
-             // We check .trim().length > 0 to exclude cells that are purely whitespace, 
-             // but include any cell with visible text/numbers.
              completedLocos = allLocosForMod.filter(loco => loco.status.trim().length > 0);
           } else if (isCabAcMod) {
-            // New rule for CAB AC: count and list only if status contains 'Working'
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('WORKING'));
           } else if (isV3Mod) {
-            // Special rule: count and list only if status contains 'V3'
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('V3'));
           } else {
-            // Default rule: count and list if status is not empty (ignoring whitespace)
             completedLocos = allLocosForMod.filter(loco => loco.status.trim().length > 0);
           }
 
-          return { 
+          const standardEntry: ModificationSummary = { 
               name: modName, 
               count: completedLocos.length, 
               locos: completedLocos.sort((a, b) => a.locoNo.localeCompare(b.locoNo)) 
           };
-          
+
           // Special logic for Shunting op. mod. (15KMPH) to add the "Updated" row
           if (trimmedModName === 'Shunting op. mod. (15KMPH)') {
               const updatedLocos = completedLocos.filter(loco => 
@@ -188,7 +181,7 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
         </h2>
         <button
           onClick={onBack}
-          className="px-4 py-2 text-sm font-medium text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-light transition"
+          className="px-4 py-2 text-sm font-medium text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition"
         >
           &larr; Back to Search
         </button>
@@ -200,7 +193,7 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Modification</th>
               <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Locos Completed</th>
-              <th scope="col" className="relative px-6 py-3"><span className="sr-only">Expand/Collapse</span></th>
+              <th scope="col" className="relative px-6 py-3"><span className="sr-only">Expand</span></th>
             </tr>
           </thead>
           <tbody className="bg-white">
