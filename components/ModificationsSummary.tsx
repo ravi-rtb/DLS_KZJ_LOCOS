@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getAllWAG7Modifications } from '../services/googleSheetService';
 import type { WAG7Modification } from '../types';
 import Loader from './Loader';
@@ -101,61 +100,51 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
         if (!locoNoKey) {
             throw new Error("Could not find 'Loco Number' column in the modifications sheet.");
         }
-        
+
         const excludedMods = new Set(["SPM Make", "Pull Rod Modification"]);
         const modificationKeys = Object.keys(allModifications[0]).filter(
           k => k !== locoNoKey && !excludedMods.has(k)
         );
-        
-        const summary = modificationKeys.flatMap(modName => {
+
+        const summary = modificationKeys.map(modName => {
           const trimmedModName = modName.trim();
           let completedLocos: { locoNo: string; status: string }[] = [];
 
           const allLocosForMod = allModifications
             .map(locoRecord => ({
               locoNo: String(locoRecord[locoNoKey] || ''),
-              status: String(locoRecord[modName] || ''),
-            }))
-            .filter(loco => loco.locoNo && loco.locoNo.trim() !== '');
+              status: String(locoRecord[modName] || '').trim(),
 
-          // Define special conditions for counting based on column name
+            }))
+            .filter(loco => loco.locoNo); // Ensure loco has a number
+
+          // Define special conditions
           const upperTrimmedModName = trimmedModName.toUpperCase();
-          const isKavach = upperTrimmedModName.includes('KAVACH');
+
           const isCabAcMod = upperTrimmedModName === 'CAB AC';
           const isV3Mod = upperTrimmedModName.includes('MPCS V3') || upperTrimmedModName === 'LSIP';
 
-          if (isKavach) {
-             completedLocos = allLocosForMod.filter(loco => loco.status.trim().length > 0);
-          } else if (isCabAcMod) {
+          if (isCabAcMod) {
+
+
+
+
+
+            // New rule for CAB AC: count and list only if status contains 'Working'
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('WORKING'));
           } else if (isV3Mod) {
+            // Special rule: count and list only if status contains 'V3'
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('V3'));
           } else {
-            completedLocos = allLocosForMod.filter(loco => loco.status.trim().length > 0);
+            // Default rule: count and list if status is not empty
+            completedLocos = allLocosForMod.filter(loco => loco.status !== '');
           }
 
-          const standardEntry: ModificationSummary = { 
+          return { 
               name: modName, 
               count: completedLocos.length, 
               locos: completedLocos.sort((a, b) => a.locoNo.localeCompare(b.locoNo)) 
           };
-
-          // Special logic for Shunting op. mod. (15KMPH) to add the "Updated" row
-          if (trimmedModName === 'Shunting op. mod. (15KMPH)') {
-              const updatedLocos = completedLocos.filter(loco => 
-                  loco.status.toUpperCase().includes('(N)')
-              );
-              
-              const updatedEntry: ModificationSummary = {
-                  name: 'Shunting op. mod. - Updated',
-                  count: updatedLocos.length,
-                  locos: updatedLocos.sort((a, b) => a.locoNo.localeCompare(b.locoNo))
-              };
-              
-              return [standardEntry, updatedEntry];
-          }
-
-          return [standardEntry];
         });
 
         setSummaryData(summary);
@@ -181,7 +170,7 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
         </h2>
         <button
           onClick={onBack}
-          className="px-4 py-2 text-sm font-medium text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition"
+          className="px-4 py-2 text-sm font-medium text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-light transition"
         >
           &larr; Back to Search
         </button>
@@ -193,7 +182,7 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Modification</th>
               <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Locos Completed</th>
-              <th scope="col" className="relative px-6 py-3"><span className="sr-only">Expand</span></th>
+              <th scope="col" className="relative px-6 py-3"><span className="sr-only">Expand/Collapse</span></th>
             </tr>
           </thead>
           <tbody className="bg-white">
