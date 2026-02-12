@@ -60,15 +60,13 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
   };
 
   const handleGalleryClick = (e: React.MouseEvent, link: string, type: 'media' | 'doc', locoNo?: string) => {
-    // Check if it is a Folder link (legacy support) - open in new tab
     if (link.includes('/folders/')) {
       return;
     }
 
     e.preventDefault();
-    e.stopPropagation(); // Stop propagation in case table row clicks are handled
+    e.stopPropagation();
 
-    // Parse format: "URL | Name" or just "URL"
     const items: MediaItem[] = link.split(',').map((itemStr, index) => {
         const parts = itemStr.split('|');
         const url = parts[0].trim();
@@ -109,7 +107,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
       >
         <div 
           className={`bg-white shadow-xl flex flex-col print:shadow-none print:rounded-none print:max-h-full print:w-full transition-all duration-300 ${isFullScreen ? 'w-screen h-screen max-w-full max-h-full rounded-none' : 'w-full max-w-6xl max-h-[90vh] rounded-lg'}`}
-          onClick={e => e.stopPropagation()} // Prevent closing when clicking inside the modal
+          onClick={e => e.stopPropagation()}
         >
           <header className="flex justify-between items-center p-4 border-b print:hidden">
             <h2 id="failure-details-title" className="text-lg font-bold text-brand-primary">
@@ -118,36 +116,19 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
             <div className="flex items-center gap-2 sm:gap-4">
               <button
                 onClick={() => setIsFullScreen(!isFullScreen)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-text-secondary bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-light transition"
-                aria-label={isFullScreen ? 'Exit full screen' : 'View in full screen'}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-text-secondary bg-gray-100 rounded-md hover:bg-gray-200 transition"
               >
-                {isFullScreen ? (
-                  <>
-                    <FullScreenExitIcon className="h-4 w-4" />
-                    <span>Exit</span>
-                  </>
-                ) : (
-                  <>
-                    <FullScreenEnterIcon className="h-4 w-4" />
-                    <span className="hidden sm:inline">Full Screen</span>
-                  </>
-                )}
+                {isFullScreen ? <FullScreenExitIcon className="h-4 w-4" /> : <FullScreenEnterIcon className="h-4 w-4" />}
+                <span className="hidden sm:inline">{isFullScreen ? 'Exit' : 'Full Screen'}</span>
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-text-secondary bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-light transition"
-                aria-label="Print details"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-text-secondary bg-gray-100 rounded-md hover:bg-gray-200 transition"
               >
                 <PrinterIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">Print</span>
               </button>
-              <button 
-                onClick={onClose} 
-                className="text-gray-500 hover:text-gray-800 text-2xl font-bold"
-                aria-label="Close"
-              >
-                &times;
-              </button>
+              <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </div>
           </header>
 
@@ -163,36 +144,15 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                   <tr>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">
                         <div onClick={() => requestSort('datefailed')} className="cursor-pointer hover:text-text-primary transition-colors group">
-                            <div className="flex items-center gap-1">
-                                Date Failed {getSortIcon('datefailed')}
-                            </div>
-                            <span className="text-[10px] font-normal normal-case text-gray-500 group-hover:text-gray-700">Train No</span>
+                            <div className="flex items-center gap-1">Date Failed {getSortIcon('datefailed')}</div>
                         </div>
                     </th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[14%]">
-                        Loco No. +MU With<br />
-                        <span className="text-[10px] font-normal normal-case text-gray-500">Schedule Details</span>
-                    </th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">
-                        <div onClick={() => requestSort('icmsmessage')} className="cursor-pointer hover:text-text-primary transition-colors">
-                             <div className="flex items-center gap-1">ICMS/Msg {getSortIcon('icmsmessage')}</div>
-                             <div>Division</div>
-                             <div>Railway</div>
-                        </div>
-                    </th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[14%]">Loco No. +MU With</th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[10%]">ICMS/Msg/Div/Rly</th>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[20%]">Brief Message</th>
                     <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[24%]">Cause of Failure</th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">
-                        <div onClick={() => requestSort('equipment')} className="cursor-pointer hover:text-text-primary transition-colors">
-                            <div className="flex items-center gap-1">Equipment {getSortIcon('equipment')}</div>
-                            <div>Component</div>
-                        </div>
-                    </th>
-                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[8%]">
-                         <div onClick={() => requestSort('responsibility')} className="cursor-pointer hover:text-text-primary transition-colors flex items-center gap-1">
-                            Section {getSortIcon('responsibility')}
-                        </div>
-                    </th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[12%]">Equip/Comp</th>
+                    <th className="p-2 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider align-top w-[8%]">Section</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -210,9 +170,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
-                                className="font-bold text-brand-secondary hover:text-brand-primary hover:underline transition-colors cursor-pointer"
-                                title={`View document for loco #${failure.locono}`}
-                                aria-label={`View document for loco number ${failure.locono}`}
+                                className="font-bold text-brand-secondary hover:text-brand-primary hover:underline cursor-pointer"
                             >
                                 {failure.locono}
                             </a>
@@ -222,11 +180,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                             {failure.muwith ? ` + ${failure.muwith}` : ''}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                            {failure.schparticulars ? (
-                                <span className="block">{failure.schparticulars}</span>
-                            ) : (
-                                failure.lastsch && <span className="block">LS: {failure.lastsch} ({failure.lastschdate})</span>
-                            )}
+                            {failure.schparticulars || (failure.lastsch && `LS: ${failure.lastsch} (${failure.lastschdate})`)}
                         </div>
                       </td>
                       <td className="p-2 align-top text-text-primary whitespace-normal break-words">
@@ -242,8 +196,6 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                             rel="noopener noreferrer"
                             onClick={(e) => handleGalleryClick(e, failure.medialink!, 'media')}
                             className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-2 cursor-pointer"
-                            title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
-                            aria-label="View media for this failure"
                           >
                             <PhotoIcon className="h-4 w-4" />
                             <span>View Media</span>
@@ -261,7 +213,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
               </table>
             </div>
 
-            {/* Mobile Card View */}
+            {/* Mobile Card View (Matches FailuresTable style) */}
             <div className="md:hidden space-y-4">
                 {sortedFailures.map((failure, index) => (
                     <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
@@ -271,10 +223,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                                     <span className="text-text-secondary font-medium">#{index + 1}</span> {failure.locono}
                                     {failure.muwith ? ` + ${failure.muwith}` : ''}
                                 </p>
-                                <p className="text-text-secondary">
-                                    {failure.datefailed}
-                                    {failure.trainno && <span className="text-xs font-medium ml-2">({failure.trainno})</span>}
-                                </p>
+                                <p className="text-text-secondary">{failure.datefailed}</p>
                             </div>
                             {failure.documentlink && (
                                 <a
@@ -283,8 +232,6 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                                     rel="noopener noreferrer"
                                     onClick={(e) => handleGalleryClick(e, failure.documentlink!, 'doc', failure.locono)}
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition-colors cursor-pointer"
-                                    title={`View document for loco #${failure.locono}`}
-                                    aria-label={`View document for loco number ${failure.locono}`}
                                 >
                                     <LinkIcon className="h-4 w-4" />
                                     View Doc
@@ -293,19 +240,6 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                         </div>
 
                         <div className="space-y-3">
-                            {(failure.schparticulars || failure.lastsch) && (
-                                <div className="grid grid-cols-12 gap-2">
-                                    <div className="col-span-4"><p className="font-semibold text-text-secondary">Schedule</p></div>
-                                    <div className="col-span-8">
-                                        {failure.schparticulars ? (
-                                            <p className="text-text-primary">{failure.schparticulars}</p>
-                                        ) : (
-                                            <p className="text-text-primary">LS: {failure.lastsch} ({failure.lastschdate})</p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="grid grid-cols-12 gap-2">
                                 <div className="col-span-4"><p className="font-semibold text-text-secondary">ICMS/Msg</p></div>
                                 <div className="col-span-8">
@@ -313,7 +247,6 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                                     {(failure.div || failure.rly) && <p className="text-text-primary">{failure.div}/{failure.rly}</p>}
                                 </div>
                             </div>
-
                             <div className="grid grid-cols-12 gap-2">
                                 <div className="col-span-4"><p className="font-semibold text-text-secondary">Message</p></div>
                                 <div className="col-span-8 text-text-primary">
@@ -325,26 +258,17 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
                                             rel="noopener noreferrer"
                                             onClick={(e) => handleGalleryClick(e, failure.medialink!, 'media')}
                                             className="inline-flex items-center gap-1 text-sm text-brand-secondary hover:text-brand-primary mt-1 cursor-pointer"
-                                            title={failure.medialink.includes('/folders/') ? "Open Drive Folder" : "View Media Gallery"}
-                                            aria-label="View media for this failure"
                                         >
                                             <PhotoIcon className="h-4 w-4" />
-                                            <span>View Media</span>
+                                            <span>Media</span>
                                         </a>
                                     )}
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-12 gap-2">
-                                <div className="col-span-4"><p className="font-semibold text-text-secondary">Equipment</p></div>
-                                <div className="col-span-8"><p className="text-text-primary">{failure.equipment || ''}{failure.component ? ` - ${failure.component}` : ''}</p></div>
-                            </div>
-
                             <div className="grid grid-cols-12 gap-2">
                                 <div className="col-span-4"><p className="font-semibold text-text-secondary">Section</p></div>
                                 <div className="col-span-8"><p className="text-text-primary">{failure.responsibility}</p></div>
                             </div>
-
                             <div className="pt-1">
                                 <p className="font-semibold text-text-secondary mb-1">Cause of Failure</p>
                                 <p className="text-text-primary bg-white p-2 border rounded-md w-full">{failure.causeoffailure}</p>
