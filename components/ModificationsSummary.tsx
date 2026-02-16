@@ -19,11 +19,21 @@ interface ModificationsSummaryProps {
   onBack: () => void;
 }
 
+/**
+ * Robustly finds the key used for the locomotive number in a data object.
+ */
 const findLocoNumberKey = (obj: { [key: string]: any }): string | undefined => {
     if (!obj) return undefined;
-    return Object.keys(obj).find(k => 
-        k.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/gi, '') === 'locono'
-    );
+    const searchKeys = ['loco', 'locono', 'loconumber'];
+    const objKeys = Object.keys(obj);
+    
+    for (const key of objKeys) {
+        const normalizedKey = key.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9]/gi, '');
+        if (searchKeys.includes(normalizedKey)) {
+            return key;
+        }
+    }
+    return undefined;
 };
 
 const ModificationRow: React.FC<{ modification: ModificationSummary }> = ({ modification }) => {
@@ -33,42 +43,46 @@ const ModificationRow: React.FC<{ modification: ModificationSummary }> = ({ modi
     <>
       <tr 
         onClick={() => setIsExpanded(!isExpanded)} 
-        className="cursor-pointer hover:bg-gray-50 border-b border-gray-200"
+        className="cursor-pointer hover:bg-gray-50 border-b border-gray-200 transition-colors"
         aria-expanded={isExpanded}
         tabIndex={0}
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsExpanded(!isExpanded)}
       >
         <td className="px-6 py-4 font-medium text-text-primary">{modification.name}</td>
-        <td className="px-6 py-4 text-text-primary text-center font-semibold">{modification.count}</td>
+        <td className="px-6 py-4 text-center">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-brand-primary">
+            {modification.count}
+          </span>
+        </td>
         <td className="px-6 py-4 text-right">
-           <ChevronDownIcon className={`h-5 w-5 text-gray-400 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+           <ChevronDownIcon className={`h-5 w-5 text-gray-400 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
         </td>
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={3} className="p-0 bg-gray-50">
+          <td colSpan={3} className="p-0 bg-gray-50 shadow-inner">
             <div className="p-4">
-              <div className="overflow-auto max-h-60 border rounded-md">
+              <div className="overflow-auto max-h-80 border rounded-lg bg-white shadow-sm">
                 <table className="min-w-full">
                   <thead className="bg-gray-100 sticky top-0 z-10">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase w-16">Sl No.</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase">Loco No.</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-text-secondary uppercase">Date / Status</th>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-text-secondary uppercase w-16 text-center">Sl No.</th>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-text-secondary uppercase">Loco No.</th>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-text-secondary uppercase">Date / Status</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-100">
                     {modification.locos.length > 0 ? (
                       modification.locos.map((loco, index) => (
-                        <tr key={index}>
-                          <td className="px-4 py-2 text-sm text-text-primary whitespace-nowrap text-center">{index + 1}</td>
-                          <td className="px-4 py-2 text-sm text-text-primary whitespace-nowrap">{loco.locoNo}</td>
+                        <tr key={index} className="hover:bg-blue-50/50 transition-colors">
+                          <td className="px-4 py-2 text-sm text-text-secondary whitespace-nowrap text-center">{index + 1}</td>
+                          <td className="px-4 py-2 text-sm text-brand-primary font-bold whitespace-nowrap">{loco.locoNo}</td>
                           <td className="px-4 py-2 text-sm text-text-primary whitespace-nowrap">{loco.status}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="px-4 py-4 text-center text-sm text-text-secondary">No locomotives found for this modification.</td>
+                        <td colSpan={3} className="px-4 py-8 text-center text-sm text-text-secondary italic">No locomotives found with valid data for this modification.</td>
                       </tr>
                     )}
                   </tbody>
@@ -81,7 +95,6 @@ const ModificationRow: React.FC<{ modification: ModificationSummary }> = ({ modi
     </>
   );
 };
-
 
 const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) => {
   const [summaryData, setSummaryData] = useState<ModificationSummary[] | null>(null);
@@ -99,12 +112,13 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
 
         const locoNoKey = findLocoNumberKey(allModifications[0]);
         if (!locoNoKey) {
-            throw new Error("Could not find 'Loco Number' column in the modifications sheet.");
+            throw new Error("Could not find a valid 'Loco Number' column in the modifications sheet. Please check your headers.");
         }
         
-        const excludedMods = new Set(["SPM Make", "Pull Rod Modification"]);
+        // Exclude non-modification columns based on known headers or keywords
+        const excludedCols = new Set(["SPM Make", "Pull Rod Modification", "Remarks", "Loco Number", "Loco No", "LocoNo", "Sl No"]);
         const modificationKeys = Object.keys(allModifications[0]).filter(
-          k => k !== locoNoKey && !excludedMods.has(k)
+          k => !excludedCols.has(k) && !k.toLowerCase().includes('loco')
         );
         
         const summary = modificationKeys.flatMap(modName => {
@@ -113,39 +127,48 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
 
           const allLocosForMod = allModifications
             .map(locoRecord => ({
-              locoNo: String(locoRecord[locoNoKey] || ''),
-              status: String(locoRecord[modName] || ''),
+              locoNo: String(locoRecord[locoNoKey] || '').trim(),
+              status: String(locoRecord[modName] || '').trim(),
             }))
-            .filter(loco => loco.locoNo && loco.locoNo.trim() !== '');
+            .filter(loco => loco.locoNo && loco.locoNo.length > 0);
 
-          // Define special conditions for counting based on column name
           const upperTrimmedModName = trimmedModName.toUpperCase();
           const isKavach = upperTrimmedModName.includes('KAVACH');
-          const isCabAcMod = upperTrimmedModName === 'CAB AC';
+          const isCabAcMod = upperTrimmedModName.includes('CAB AC');
           const isV3Mod = upperTrimmedModName.includes('MPCS V3') || upperTrimmedModName === 'LSIP';
 
+          // Detection logic
           if (isKavach) {
-             completedLocos = allLocosForMod.filter(loco => loco.status.trim().length > 0);
+             completedLocos = allLocosForMod.filter(loco => loco.status.length > 0 && !loco.status.toUpperCase().includes('NOT'));
           } else if (isCabAcMod) {
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('WORKING'));
           } else if (isV3Mod) {
             completedLocos = allLocosForMod.filter(loco => loco.status.toUpperCase().includes('V3'));
           } else {
-            completedLocos = allLocosForMod.filter(loco => loco.status.trim().length > 0);
+            // General logic: any non-empty non-nil value counts
+            completedLocos = allLocosForMod.filter(loco => 
+              loco.status.length > 0 && 
+              loco.status.toUpperCase() !== 'NIL' && 
+              loco.status !== '-' &&
+              !loco.status.toUpperCase().includes('PENDING')
+            );
           }
 
-          const standardEntry: ModificationSummary = { 
+          if (completedLocos.length === 0) return [];
+
+          return [{ 
               name: modName, 
               count: completedLocos.length, 
-              locos: completedLocos.sort((a, b) => a.locoNo.localeCompare(b.locoNo)) 
-          };
-
-
+              locos: completedLocos.sort((a, b) => a.locoNo.localeCompare(b.locoNo, undefined, { numeric: true })) 
+          }];
         });
+
+        // Sort overall summary by count descending
+        summary.sort((a, b) => b.count - a.count);
 
         setSummaryData(summary);
       } catch (err) {
-        console.error(err);
+        console.error("Modification Summary Error:", err);
         setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching summary data.');
       } finally {
         setIsLoading(false);
@@ -160,31 +183,44 @@ const ModificationsSummary: React.FC<ModificationsSummaryProps> = ({ onBack }) =
 
   return (
     <div className="bg-bg-card p-6 rounded-lg shadow-lg">
-      <div className="flex justify-between items-center mb-4 border-b pb-4">
-        <h2 className="text-xl font-bold text-brand-primary">
-          WAG7 Modifications Summary
-        </h2>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-brand-primary">
+            WAG7 Modifications Summary
+          </h2>
+          <p className="text-sm text-text-secondary mt-1">
+            Tracking {summaryData?.length || 0} unique modification types across the fleet.
+          </p>
+        </div>
         <button
           onClick={onBack}
-          className="px-4 py-2 text-sm font-medium text-brand-secondary bg-blue-100 rounded-md hover:bg-blue-200 transition"
+          className="px-6 py-2 text-sm font-semibold text-brand-secondary bg-blue-100 rounded-lg hover:bg-blue-200 transition-all shadow-sm"
         >
           &larr; Back to Search
         </button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="min-w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Modification</th>
-              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-text-secondary uppercase tracking-wider">Locos Completed</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Modification Type</th>
+              <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-text-secondary uppercase tracking-wider">Locomotives Completed</th>
               <th scope="col" className="relative px-6 py-3"><span className="sr-only">Expand</span></th>
             </tr>
           </thead>
-          <tbody className="bg-white">
-            {summaryData && summaryData.map(mod => (
-              <ModificationRow key={mod.name} modification={mod} />
-            ))}
+          <tbody className="bg-white divide-y divide-gray-100">
+            {summaryData && summaryData.length > 0 ? (
+              summaryData.map(mod => (
+                <ModificationRow key={mod.name} modification={mod} />
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="px-6 py-12 text-center text-text-secondary italic">
+                  No modification records found in the current sheet.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
