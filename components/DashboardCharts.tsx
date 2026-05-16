@@ -175,7 +175,7 @@ const DashboardCharts = () => {
   const [failures, setFailures] = useState<TractionFailure[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [modalFailures, setModalFailures] = useState<TractionFailure[] | null>(null);
+  const [modalData, setModalData] = useState<{ items: TractionFailure[]; title: string } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   // Chart 1 state
@@ -300,10 +300,14 @@ const DashboardCharts = () => {
           const points = chart1InstanceRef.current.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
           if (points.length) {
             const firstPoint = points[0];
-            const label = chart1InstanceRef.current.data.labels[firstPoint.index];
+            const label = (chart1InstanceRef.current.data.labels as string[])[firstPoint.index];
             const failuresToShow = dataByResponsibility[label]?.items;
             if (failuresToShow) {
-              setModalFailures(failuresToShow);
+              const statusLabel = investigationToggle === 'P' ? 'Pending' : 'Yet to Arrive';
+              setModalData({ 
+                items: failuresToShow, 
+                title: `Investigation ${statusLabel} Locos - ${label} (2025-26)`
+              });
             }
           }
         },
@@ -478,7 +482,10 @@ const DashboardCharts = () => {
                     
                     const failuresToShow = dataByEquipmentAndResp[equipment]?.[responsibility]?.all;
                     if (failuresToShow) {
-                        setModalFailures(failuresToShow);
+                        setModalData({
+                          items: failuresToShow,
+                          title: `ICMS Failures - ${equipment} - ${responsibility} (2025-26)`
+                        });
                     }
                 }
             },
@@ -556,7 +563,13 @@ const DashboardCharts = () => {
 
   return (
     <section className="mb-8" aria-labelledby="dashboard-title">
-        {modalFailures && <FailureDetailsModal failures={modalFailures} onClose={() => setModalFailures(null)} />}
+        {modalData && (
+          <FailureDetailsModal 
+            failures={modalData.items} 
+            title={modalData.title} 
+            onClose={() => setModalData(null)} 
+          />
+        )}
         <h2 id="dashboard-title" className="text-2xl font-bold text-center text-brand-primary mb-6">
             WAG7 Failures 2025-26 
         </h2>

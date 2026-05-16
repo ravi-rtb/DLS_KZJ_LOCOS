@@ -68,6 +68,68 @@ const getWdg4SystemInfo = (equipment: string): { name: string; group: 'Mechanica
   return { name: mappedName, group: 'Others' };
 };
 
+const MONTH_NAME_TO_INDEX: Record<string, number> = {
+  'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+  'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+};
+
+const getMonthIntersectedContext = (colName: string, filterStart?: string, filterEnd?: string) => {
+  const parts = colName.split("'");
+  if (parts.length < 2) return colName;
+  const monthName = parts[0];
+  const yearShort = parts[1];
+  const monthIndex = MONTH_NAME_TO_INDEX[monthName];
+  if (monthIndex === undefined) return colName;
+  const year = 2000 + parseInt(yearShort);
+
+  const monthStartDate = new Date(Date.UTC(year, monthIndex, 1));
+  const monthEndDate = new Date(Date.UTC(year, monthIndex + 1, 0, 23, 59, 59, 999));
+
+  const userStart = filterStart ? new Date(filterStart) : null;
+  const userEnd = filterEnd ? new Date(filterEnd) : null;
+
+  const actualStart = userStart && userStart > monthStartDate ? userStart : monthStartDate;
+  const actualEnd = userEnd && userEnd < monthEndDate ? userEnd : monthEndDate;
+
+  const format = (d: Date) => {
+      const day = d.getUTCDate().toString().padStart(2, '0');
+      const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+      const year = d.getUTCFullYear();
+      return `${day}-${month}-${year}`;
+  };
+  
+  if (actualStart > actualEnd) return colName;
+
+  return `${format(actualStart)} to ${format(actualEnd)}`;
+};
+
+const getFyDateRange = (fy: string) => {
+  const startYear = parseInt(fy.split('-')[0]);
+  const startDate = new Date(Date.UTC(startYear, 3, 1)); // April 1st
+  const endDate = new Date(Date.UTC(startYear + 1, 2, 31, 23, 59, 59, 999)); // March 31st
+  return { startDate, endDate };
+};
+
+const getIntersectedContext = (fy: string, filterStart?: string, filterEnd?: string) => {
+  const fyRange = getFyDateRange(fy);
+  const userStart = filterStart ? new Date(filterStart) : null;
+  const userEnd = filterEnd ? new Date(filterEnd) : null;
+
+  const actualStart = userStart && userStart > fyRange.startDate ? userStart : fyRange.startDate;
+  const actualEnd = userEnd && userEnd < fyRange.endDate ? userEnd : fyRange.endDate;
+
+  if (!filterStart && !filterEnd) return fy;
+  
+  const format = (d: Date) => {
+      const day = d.getUTCDate().toString().padStart(2, '0');
+      const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+      const year = d.getUTCFullYear();
+      return `${day}-${month}-${year}`;
+  };
+  
+  return `${format(actualStart)} to ${format(actualEnd)}`;
+};
+
 const getFinancialYear = (date: Date): string => {
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth(); // 0-11
@@ -255,7 +317,12 @@ const processWdg4GroupedSummary = (
 
 // --- Sub-Components ---
 
-const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: TractionFailure[]) => void }> = ({ data, onCellClick }) => {
+const SummaryTable: React.FC<{ 
+    data: SummaryData; 
+    onCellClick: (failures: TractionFailure[], title: string) => void; 
+    context?: string;
+    filterDates?: { start: string; end: string };
+}> = ({ data, onCellClick, context, filterDates }) => {
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
 
     const sortedRows = useMemo(() => {
@@ -310,6 +377,29 @@ const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: Tracti
         return <p className="text-sm text-text-secondary px-3 py-2">No data available for this summary.</p>;
     }
 
+    const buildTitle = (rowName: string, colName?: string) => {
+        let title = data.title;
+        const isGrandTotal = rowName === 'Grand Total';
+        const isTotalCol = !colName || colName === 'Total';
+
+        if (!isGrandTotal) {
+            title += ` - ${rowName}`;
+        }
+        
+        if (!isTotalCol) {
+            title += ` - ${colName}`;
+        }
+
+        if (context && isTotalCol) {
+            title += ` (${context})`;
+        } else if (!isTotalCol) {
+            const monthContext = getMonthIntersectedContext(colName, filterDates?.start, filterDates?.end);
+            title += ` (${monthContext})`;
+        }
+        
+        return title;
+    };
+
     return (
     <div className="overflow-x-auto border rounded-lg">
       <table className="min-w-full text-sm">
@@ -344,13 +434,13 @@ const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: Tracti
               {row.monthlyData.map((cell, i) => (
                 <td key={i} className="px-3 py-2 text-center">
                   {cell.count > 0 ? (
-                    <button onClick={() => onCellClick(cell.items)} className="text-blue-600 hover:underline">{cell.count}</button>
+                    <button onClick={() => onCellClick(cell.items, buildTitle(row.name, data.headers[i]))} className="text-blue-600 hover:underline">{cell.count}</button>
                   ) : null}
                 </td>
               ))}
               <td className="px-3 py-2 text-center font-bold">
                 {row.total.count > 0 ? (
-                    <button onClick={() => onCellClick(row.total.items)} className="text-blue-600 hover:underline">{row.total.count}</button>
+                    <button onClick={() => onCellClick(row.total.items, buildTitle(row.name))} className="text-blue-600 hover:underline">{row.total.count}</button>
                 ) : null}
               </td>
             </tr>
@@ -362,13 +452,13 @@ const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: Tracti
                 {data.totals.monthlyData.map((cell, i) => (
                     <td key={i} className="px-3 py-2 text-center">
                         {cell.count > 0 ? (
-                            <button onClick={() => onCellClick(cell.items)} className="text-blue-600 hover:underline">{cell.count}</button>
+                            <button onClick={() => onCellClick(cell.items, buildTitle('Grand Total', data.headers[i]))} className="text-blue-600 hover:underline">{cell.count}</button>
                         ) : null}
                     </td>
                 ))}
                  <td className="px-3 py-2 text-center">
                     {data.totals.total.count > 0 ? (
-                        <button onClick={() => onCellClick(data.totals.total.items)} className="text-blue-600 hover:underline">{data.totals.total.count}</button>
+                        <button onClick={() => onCellClick(data.totals.total.items, buildTitle('Grand Total'))} className="text-blue-600 hover:underline">{data.totals.total.count}</button>
                     ) : null}
                 </td>
             </tr>
@@ -378,7 +468,12 @@ const SummaryTable: React.FC<{ data: SummaryData; onCellClick: (failures: Tracti
   );
 };
 
-const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (failures: TractionFailure[]) => void }> = ({ data, onCellClick }) => {
+const GroupedSummaryTable: React.FC<{ 
+    data: GroupedSummaryData; 
+    onCellClick: (failures: TractionFailure[], title: string) => void; 
+    context?: string;
+    filterDates?: { start: string; end: string };
+}> = ({ data, onCellClick, context, filterDates }) => {
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
 
   const requestSort = (key: string) => {
@@ -425,19 +520,48 @@ const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (fa
       return sorted;
   };
 
-  const renderRow = (row: SummaryRow, isSubtotal = false) => (
+  const buildTitle = (rowName: string, groupName?: string, colName?: string) => {
+      let title = data.title;
+      const isGrandTotal = rowName === 'Grand Total';
+      const isSubtotal = rowName.includes('Subtotal');
+      const isTotalCol = !colName || colName === 'Total';
+
+      // Group context for subtotal or regular row
+      if (groupName && (isSubtotal || !isGrandTotal)) {
+          title += ` (${groupName})`;
+      }
+
+      if (!isSubtotal && !isGrandTotal) {
+          title += ` - ${rowName}`;
+      }
+
+      if (!isTotalCol) {
+          title += ` - ${colName}`;
+      }
+
+      if (context && isTotalCol) {
+          title += ` (${context})`;
+      } else if (!isTotalCol) {
+          const monthContext = getMonthIntersectedContext(colName, filterDates?.start, filterDates?.end);
+          title += ` (${monthContext})`;
+      }
+      
+      return title;
+  };
+
+  const renderRow = (row: SummaryRow, groupName?: string, isSubtotal = false) => (
     <tr key={row.name} className={isSubtotal ? "bg-gray-200 font-semibold" : "hover:bg-gray-50"}>
       <td className="px-3 py-2 font-medium text-text-primary whitespace-nowrap sticky left-0 bg-inherit">{row.name}</td>
       {row.monthlyData.map((cell, i) => (
         <td key={i} className="px-3 py-2 text-center">
           {cell.count > 0 ? (
-            <button onClick={() => onCellClick(cell.items)} className="text-blue-600 hover:underline">{cell.count}</button>
+            <button onClick={() => onCellClick(cell.items, buildTitle(row.name, groupName, data.headers[i]))} className="text-blue-600 hover:underline">{cell.count}</button>
           ) : null}
         </td>
       ))}
       <td className="px-3 py-2 text-center font-bold">
         {row.total.count > 0 ? (
-          <button onClick={() => onCellClick(row.total.items)} className="text-blue-600 hover:underline">{row.total.count}</button>
+          <button onClick={() => onCellClick(row.total.items, buildTitle(row.name, groupName))} className="text-blue-600 hover:underline">{row.total.count}</button>
         ) : null}
       </td>
     </tr>
@@ -486,8 +610,8 @@ const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (fa
               {group.rows.length > 0 && (
                 <>
                   <tr className="bg-gray-100 font-bold"><td colSpan={14} className="px-3 py-2 text-left text-text-primary">{group.name}</td></tr>
-                  {group.rows.map(row => renderRow(row))}
-                  {renderRow({ name: `Subtotal - ${group.name}`, ...group.totals }, true)}
+                  {group.rows.map(row => renderRow(row, group.name))}
+                  {renderRow({ name: `Subtotal - ${group.name}`, ...group.totals }, group.name, true)}
                 </>
               )}
             </React.Fragment>
@@ -495,7 +619,7 @@ const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (fa
           {sortedOthers.length > 0 && (
             <>
               <tr className="bg-gray-100 font-bold"><td colSpan={14} className="px-3 py-2 text-left text-text-primary">Others</td></tr>
-              {sortedOthers.map(row => renderRow(row))}
+              {sortedOthers.map(row => renderRow(row, 'Others'))}
             </>
           )}
         </tbody>
@@ -504,11 +628,11 @@ const GroupedSummaryTable: React.FC<{ data: GroupedSummaryData; onCellClick: (fa
             <td className="px-3 py-2 sticky left-0 bg-gray-200 text-text-primary">Grand Total</td>
             {data.grandTotals.monthlyData.map((cell, i) => (
               <td key={i} className="px-3 py-2 text-center">
-                {cell.count > 0 ? <button onClick={() => onCellClick(cell.items)} className="text-blue-600 hover:underline">{cell.count}</button> : null}
+                {cell.count > 0 ? <button onClick={() => onCellClick(cell.items, buildTitle('Grand Total', undefined, data.headers[i]))} className="text-blue-600 hover:underline">{cell.count}</button> : null}
               </td>
             ))}
             <td className="px-3 py-2 text-center">
-              {data.grandTotals.total.count > 0 ? <button onClick={() => onCellClick(data.grandTotals.total.items)} className="text-blue-600 hover:underline">{data.grandTotals.total.count}</button> : null}
+              {data.grandTotals.total.count > 0 ? <button onClick={() => onCellClick(data.grandTotals.total.items, buildTitle('Grand Total'))} className="text-blue-600 hover:underline">{data.grandTotals.total.count}</button> : null}
             </td>
           </tr>
         </tfoot>
@@ -593,7 +717,7 @@ const DateFilter: React.FC<{
 
 
 // --- WAG7 Summary View ---
-const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => void }> = ({ onCellClick }) => {
+const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[], title: string) => void }> = ({ onCellClick }) => {
   const [allFailures, setAllFailures] = useState<TractionFailure[]>([]);
   const [filteredFailures, setFilteredFailures] = useState<TractionFailure[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -759,6 +883,14 @@ const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
     });
   };
 
+  const contextByFy = useMemo(() => {
+    const years = Object.keys(processedData);
+    return years.reduce((acc, fy) => {
+      acc[fy] = getIntersectedContext(fy, startDate, endDate);
+      return acc;
+    }, {} as Record<string, string>);
+  }, [processedData, startDate, endDate]);
+
   if (isLoading) return <Loader />;
   if (error) return <ErrorMessage message={error} />;
 
@@ -795,23 +927,23 @@ const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
 
               <div className={`${!expandedYears.has(fy) ? 'hidden' : ''} print:block p-4 space-y-6 bg-gray-50 border-t print:p-0 print:border-t-0 print:bg-white print:space-y-8`}>
                   <CollapsibleSummarySection title="ICMS Failures (Shed)" isExpanded={expandedSummaries[fy]?.has('a')} onToggle={() => toggleSummary(fy, 'a')}>
-                    <GroupedSummaryTable data={processedData[fy].summaryA} onCellClick={onCellClick} />
+                    <GroupedSummaryTable data={processedData[fy].summaryA} onCellClick={onCellClick} context={contextByFy[fy]} filterDates={{ start: startDate, end: endDate }} />
                   </CollapsibleSummarySection>
                   
                   <CollapsibleSummarySection title="Messages" isExpanded={expandedSummaries[fy]?.has('c')} onToggle={() => toggleSummary(fy, 'c')}>
-                    <GroupedSummaryTable data={processedData[fy].summaryC} onCellClick={onCellClick} />
+                    <GroupedSummaryTable data={processedData[fy].summaryC} onCellClick={onCellClick} context={contextByFy[fy]} filterDates={{ start: startDate, end: endDate }} />
                   </CollapsibleSummarySection>
                   
                   <CollapsibleSummarySection title="Sections summary" isExpanded={expandedSummaries[fy]?.has('d')} onToggle={() => toggleSummary(fy, 'd')}>
-                    <SummaryTable data={processedData[fy].summaryD} onCellClick={onCellClick} />
+                    <SummaryTable data={processedData[fy].summaryD} onCellClick={onCellClick} context={contextByFy[fy]} filterDates={{ start: startDate, end: endDate }} />
                   </CollapsibleSummarySection>
                   
                   <CollapsibleSummarySection title="ICMS Failures (Based on eLocos)" isExpanded={expandedSummaries[fy]?.has('b')} onToggle={() => toggleSummary(fy, 'b')}>
-                     <GroupedSummaryTable data={processedData[fy].summaryB} onCellClick={onCellClick} />
+                     <GroupedSummaryTable data={processedData[fy].summaryB} onCellClick={onCellClick} context={contextByFy[fy]} filterDates={{ start: startDate, end: endDate }} />
                   </CollapsibleSummarySection>
 
                   <CollapsibleSummarySection title="Punctuality - As per eLocos" isExpanded={expandedSummaries[fy]?.has('e')} onToggle={() => toggleSummary(fy, 'e')}>
-                     <div className="space-y-4"><SummaryTable data={processedData[fy].summaryE_punc} onCellClick={onCellClick} /></div>
+                     <div className="space-y-4"><SummaryTable data={processedData[fy].summaryE_punc} onCellClick={onCellClick} context={contextByFy[fy]} filterDates={{ start: startDate, end: endDate }} /></div>
                   </CollapsibleSummarySection>
                 </div>
             </div>
@@ -824,7 +956,7 @@ const WAG7SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
 
 
 // --- WDG4 Summary View ---
-const WDG4SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => void }> = ({ onCellClick }) => {
+const WDG4SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[], title: string) => void }> = ({ onCellClick }) => {
   const [allFailures, setAllFailures] = useState<TractionFailure[]>([]);
   const [filteredFailures, setFilteredFailures] = useState<TractionFailure[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -934,6 +1066,14 @@ const WDG4SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
     });
   };
 
+  const contextByFy = useMemo(() => {
+    const years = Object.keys(processedData);
+    return years.reduce((acc, fy) => {
+      acc[fy] = getIntersectedContext(fy, startDate, endDate);
+      return acc;
+    }, {} as Record<string, string>);
+  }, [processedData, startDate, endDate]);
+
   if (isLoading) return <Loader />;
   if (error) return <ErrorMessage message={error} />;
 
@@ -969,15 +1109,15 @@ const WDG4SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
               
               <div className={`${!expandedYears.has(fy) ? 'hidden' : ''} print:block p-4 space-y-6 bg-gray-50 border-t print:p-0 print:border-t-0 print:bg-white print:space-y-8`}>
                   <CollapsibleSummarySection title="ICMS Summary" isExpanded={expandedSummaries[fy]?.has('icms')} onToggle={() => toggleSummary(fy, 'icms')}>
-                    <GroupedSummaryTable data={processedData[fy].icms} onCellClick={onCellClick} />
+                    <GroupedSummaryTable data={processedData[fy].icms} onCellClick={onCellClick} context={contextByFy[fy]} filterDates={{ start: startDate, end: endDate }} />
                   </CollapsibleSummarySection>
                   
                   <CollapsibleSummarySection title="Messages Summary" isExpanded={expandedSummaries[fy]?.has('messages')} onToggle={() => toggleSummary(fy, 'messages')}>
-                    <GroupedSummaryTable data={processedData[fy].messages} onCellClick={onCellClick} />
+                    <GroupedSummaryTable data={processedData[fy].messages} onCellClick={onCellClick} context={contextByFy[fy]} filterDates={{ start: startDate, end: endDate }} />
                   </CollapsibleSummarySection>
                   
                   <CollapsibleSummarySection title="Section-wise Summary" isExpanded={expandedSummaries[fy]?.has('section')} onToggle={() => toggleSummary(fy, 'section')}>
-                    <SummaryTable data={processedData[fy].section} onCellClick={onCellClick} />
+                    <SummaryTable data={processedData[fy].section} onCellClick={onCellClick} context={contextByFy[fy]} filterDates={{ start: startDate, end: endDate }} />
                   </CollapsibleSummarySection>
                 </div>
             </div>
@@ -992,12 +1132,22 @@ const WDG4SummaryView: React.FC<{ onCellClick: (failures: TractionFailure[]) => 
 // --- Main Component ---
 
 const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
-  const [modalFailures, setModalFailures] = useState<TractionFailure[] | null>(null);
+  const [modalData, setModalData] = useState<{ items: TractionFailure[]; title: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'wag7' | 'wdg4'>('wag7');
+
+  const handleCellClick = (failures: TractionFailure[], title: string) => {
+    setModalData({ items: failures, title });
+  };
 
   return (
     <div className="bg-bg-card p-6 rounded-lg shadow-lg print:p-0 print:shadow-none print:border-none">
-        {modalFailures && <FailureDetailsModal failures={modalFailures} onClose={() => setModalFailures(null)} />}
+        {modalData && (
+          <FailureDetailsModal 
+            failures={modalData.items} 
+            title={modalData.title} 
+            onClose={() => setModalData(null)} 
+          />
+        )}
 
       <div className="flex justify-between items-center mb-4 border-b pb-4 print:hidden">
         <h2 className="text-xl font-bold text-brand-primary flex items-center">
@@ -1038,8 +1188,8 @@ const FailuresSummary: React.FC<FailuresSummaryProps> = ({ onBack }) => {
       </div>
       
       <div>
-        {activeTab === 'wag7' && <WAG7SummaryView onCellClick={setModalFailures} />}
-        {activeTab === 'wdg4' && <WDG4SummaryView onCellClick={setModalFailures} />}
+        {activeTab === 'wag7' && <WAG7SummaryView onCellClick={handleCellClick} />}
+        {activeTab === 'wdg4' && <WDG4SummaryView onCellClick={handleCellClick} />}
       </div>
     </div>
   );

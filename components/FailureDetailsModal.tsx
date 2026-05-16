@@ -8,15 +8,98 @@ import { parseDateDDMMYY } from '../services/googleSheetService';
 interface FailureDetailsModalProps {
   failures: TractionFailure[];
   onClose: () => void;
+  title?: string;
 }
 
-const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onClose }) => {
+const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onClose, title }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [galleryItems, setGalleryItems] = useState<MediaItem[] | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof TractionFailure; direction: 'ascending' | 'descending' }>({ key: 'datefailed', direction: 'descending' });
 
   const handlePrint = () => {
-    window.print();
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups for printing failure details.');
+      return;
+    }
+
+    const tableRows = sortedFailures.map((failure, index) => {
+      const locoDisplay = `${failure.locono}${failure.muwith ? ` + ${failure.muwith}` : ''}`;
+      const icmsInfo = `${failure.icmsmessage || ''}${ (failure.div || failure.rly) ? `<br/>${failure.div || ''}/${failure.rly || ''}` : '' }`;
+      const equipInfo = `${failure.equipment || ''}${failure.component ? ` - ${failure.component}` : ''}`;
+      
+      return `
+        <tr>
+          <td style="text-align: center;">${index + 1}</td>
+          <td>${failure.datefailed || ''}${failure.trainno ? `<br/><small style="color: #666;">${failure.trainno}</small>` : ''}</td>
+          <td style="font-weight: bold;">${locoDisplay}</td>
+          <td>${icmsInfo}</td>
+          <td>${failure.briefmessage || ''}</td>
+          <td>${failure.causeoffailure || ''}</td>
+          <td>${equipInfo}</td>
+          <td>${failure.responsibility || ''}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const reportTitle = title || 'Failure Details Report';
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${reportTitle}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #333; }
+            h2 { text-align: center; color: #1e3a8a; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; table-layout: fixed; word-wrap: break-word; }
+            th, td { border: 1px solid #999; padding: 8px; text-align: left; vertical-align: top; font-size: 11px; }
+            th { background-color: #f3f4f6; font-weight: bold; text-transform: uppercase; color: #4b5563; }
+            tr:nth-child(even) { background-color: #f9fafb; }
+            .footer { margin-top: 20px; text-align: right; font-size: 10px; color: #6b7280; border-top: 1px solid #eee; padding-top: 10px; }
+            @page { margin: 1cm; size: landscape; }
+            @media print {
+              body { padding: 0; }
+              table { font-size: 10px; }
+            }
+          </style>
+        </head>
+        <body>
+          <h2>${reportTitle} (${failures.length} records)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px;">S.No.</th>
+                <th style="width: 80px;">Date Failed</th>
+                <th style="width: 100px;">Loco No.</th>
+                <th style="width: 100px;">ICMS/Msg/Div</th>
+                <th style="width: 150px;">Brief Message</th>
+                <th>Cause of Failure</th>
+                <th style="width: 100px;">Equip/Comp</th>
+                <th style="width: 70px;">Section</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+          <div class="footer">
+            Generated on: ${new Date().toLocaleString()} | Diesel Loco Shed - Kazipet
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+                // window.close(); // Optional: close tab after printing
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
   };
 
   const sortedFailures = useMemo(() => {
@@ -111,7 +194,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
         >
           <header className="flex justify-between items-center p-4 border-b print:hidden">
             <h2 id="failure-details-title" className="text-lg font-bold text-brand-primary">
-              Failure Details ({failures.length} records)
+              {title || 'Failure Details'} ({failures.length} records)
             </h2>
             <div className="flex items-center gap-2 sm:gap-4">
               <button
@@ -134,7 +217,7 @@ const FailureDetailsModal: React.FC<FailureDetailsModalProps> = ({ failures, onC
 
           <main className="p-4 overflow-auto">
             <h2 className="text-xl font-bold text-center mb-4 hidden print:block">
-              Failure Details ({failures.length} records)
+              {title || 'Failure Details'} ({failures.length} records)
             </h2>
             
             {/* Desktop Table View */}
