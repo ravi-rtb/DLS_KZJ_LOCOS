@@ -215,7 +215,7 @@ const DashboardCharts = () => {
   const currentFyFailures = useMemo(() => {
     return failures.filter(f => {
       const date = parseDateDDMMYY(f.datefailed || '');
-      return date && getFinancialYear(date) === '2025-26';
+      return date && getFinancialYear(date) === '2026-27';
     });
   }, [failures]);
   
@@ -571,7 +571,7 @@ const DashboardCharts = () => {
           />
         )}
         <h2 id="dashboard-title" className="text-2xl font-bold text-center text-brand-primary mb-6">
-            WAG7 Failures 2025-26 
+            WAG7 Failures 2026-27 
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
