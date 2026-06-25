@@ -408,7 +408,7 @@ const SummaryTable: React.FC<{
              <th colSpan={14} className="px-3 py-2 text-left font-semibold text-text-primary bg-gray-200">{data.title}</th>
           </tr>
           <tr>
-            <th className="px-3 py-2 text-left font-semibold text-text-secondary sticky left-0 bg-gray-100">
+            <th className="px-3 py-2 text-left font-semibold text-text-secondary sticky left-0 bg-gray-100 z-10 min-w-[120px] max-w-[160px] sm:max-w-[280px] whitespace-normal break-all sm:break-normal">
                 <button onClick={() => requestSort('name')} className="flex items-center gap-1 transition-colors hover:text-text-primary">
                     {data.groupTitle}{getSortIcon('name')}
                 </button>
@@ -430,7 +430,7 @@ const SummaryTable: React.FC<{
         <tbody className="bg-white divide-y divide-gray-200">
           {sortedRows.map(row => (
             <tr key={row.name}>
-              <td className="px-3 py-2 font-medium text-text-primary whitespace-nowrap sticky left-0 bg-white">{row.name}</td>
+              <td className="px-3 py-2 font-medium text-text-primary sticky left-0 bg-white z-10 min-w-[120px] max-w-[160px] sm:max-w-[280px] whitespace-normal break-all sm:break-normal">{row.name}</td>
               {row.monthlyData.map((cell, i) => (
                 <td key={i} className="px-3 py-2 text-center">
                   {cell.count > 0 ? (
@@ -448,7 +448,7 @@ const SummaryTable: React.FC<{
         </tbody>
         <tfoot className="bg-gray-100 font-bold">
             <tr>
-                <td className="px-3 py-2 sticky left-0 bg-gray-100 text-text-primary">Grand Total</td>
+                <td className="px-3 py-2 sticky left-0 bg-gray-100 text-text-primary z-10 min-w-[120px] max-w-[160px] sm:max-w-[280px] whitespace-normal break-all sm:break-normal">Grand Total</td>
                 {data.totals.monthlyData.map((cell, i) => (
                     <td key={i} className="px-3 py-2 text-center">
                         {cell.count > 0 ? (
@@ -551,7 +551,7 @@ const GroupedSummaryTable: React.FC<{
 
   const renderRow = (row: SummaryRow, groupName?: string, isSubtotal = false) => (
     <tr key={row.name} className={isSubtotal ? "bg-gray-200 font-semibold" : "hover:bg-gray-50"}>
-      <td className="px-3 py-2 font-medium text-text-primary whitespace-nowrap sticky left-0 bg-inherit">{row.name}</td>
+      <td className="px-3 py-2 font-medium text-text-primary sticky left-0 bg-inherit z-10 min-w-[120px] max-w-[160px] sm:max-w-[280px] whitespace-normal break-all sm:break-normal">{row.name}</td>
       {row.monthlyData.map((cell, i) => (
         <td key={i} className="px-3 py-2 text-center">
           {cell.count > 0 ? (
@@ -585,7 +585,7 @@ const GroupedSummaryTable: React.FC<{
         <thead className="bg-gray-100">
           <tr><th colSpan={14} className="px-3 py-2 text-left font-semibold text-text-primary bg-gray-200">{data.title}</th></tr>
           <tr>
-            <th className="px-3 py-2 text-left font-semibold text-text-secondary sticky left-0 bg-gray-100">
+            <th className="px-3 py-2 text-left font-semibold text-text-secondary sticky left-0 bg-gray-100 z-10 min-w-[120px] max-w-[160px] sm:max-w-[280px] whitespace-normal break-all sm:break-normal">
                 <button onClick={() => requestSort('name')} className="flex items-center gap-1 transition-colors hover:text-text-primary">
                     {data.groupTitle}{getSortIcon('name')}
                 </button>
@@ -625,7 +625,7 @@ const GroupedSummaryTable: React.FC<{
         </tbody>
         <tfoot className="bg-gray-200 font-bold border-t-2 border-gray-400">
           <tr>
-            <td className="px-3 py-2 sticky left-0 bg-gray-200 text-text-primary">Grand Total</td>
+            <td className="px-3 py-2 sticky left-0 bg-gray-200 text-text-primary z-10 min-w-[120px] max-w-[160px] sm:max-w-[280px] whitespace-normal break-all sm:break-normal">Grand Total</td>
             {data.grandTotals.monthlyData.map((cell, i) => (
               <td key={i} className="px-3 py-2 text-center">
                 {cell.count > 0 ? <button onClick={() => onCellClick(cell.items, buildTitle('Grand Total', undefined, data.headers[i]))} className="text-blue-600 hover:underline">{cell.count}</button> : null}
