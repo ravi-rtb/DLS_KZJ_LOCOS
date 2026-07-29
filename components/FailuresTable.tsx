@@ -18,9 +18,20 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
   const [sortConfig, setSortConfig] = useState<{ key: keyof TractionFailure; direction: 'ascending' | 'descending' }>({ key: 'datefailed', direction: 'descending' });
   const [editingFailure, setEditingFailure] = useState<TractionFailure | null>(null);
   const [galleryItems, setGalleryItems] = useState<MediaItem[] | null>(null);
+  
+  const [isIcmsExpanded, setIsIcmsExpanded] = useState(true);
+  const [isMessageExpanded, setIsMessageExpanded] = useState(true);
 
-  const sortedFailures = useMemo(() => {
-    let sortableItems = [...failures];
+  const icmsFailures = useMemo(() => {
+    return failures.filter(f => (f.icmsmessage || '').trim().toUpperCase() !== 'MESSAGE');
+  }, [failures]);
+
+  const messageFailures = useMemo(() => {
+    return failures.filter(f => (f.icmsmessage || '').trim().toUpperCase() === 'MESSAGE');
+  }, [failures]);
+
+  const sortItems = (items: TractionFailure[]) => {
+    let sortableItems = [...items];
     if (sortConfig.key) {
       sortableItems.sort((a, b) => {
         if (sortConfig.key === 'datefailed') {
@@ -46,7 +57,10 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
       });
     }
     return sortableItems;
-  }, [failures, sortConfig]);
+  };
+
+  const sortedIcmsFailures = useMemo(() => sortItems(icmsFailures), [icmsFailures, sortConfig]);
+  const sortedMessageFailures = useMemo(() => sortItems(messageFailures), [messageFailures, sortConfig]);
 
   const requestSort = (key: keyof TractionFailure) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -64,15 +78,13 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
   };
 
   const handleGalleryClick = (e: React.MouseEvent, link: string, type: 'media' | 'doc', locoNo?: string) => {
-    // Check if it is a Folder link (legacy support) - open in new tab
     if (link.includes('/folders/')) {
       return;
     }
 
     e.preventDefault();
-    e.stopPropagation(); // Stop row click propagation if any
+    e.stopPropagation();
 
-    // Parse format: "URL | Name" or just "URL"
     const items: MediaItem[] = link.split(',').map((itemStr, index) => {
         const parts = itemStr.split('|');
         const url = parts[0].trim();
@@ -100,7 +112,7 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
     onDataUpdate();
   }
   
-  const cutoffDate = useMemo(() => new Date(Date.UTC(2024, 3, 1)), []); // April is month 3
+  const cutoffDate = useMemo(() => new Date(Date.UTC(2024, 3, 1)), []);
 
   if (failures.length === 0) {
     return (
@@ -111,25 +123,8 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
     );
   }
 
-  return (
+  const renderFailureTableAndCards = (items: TractionFailure[]) => (
     <>
-      {galleryItems && (
-        <MediaGalleryModal 
-          mediaItems={galleryItems} 
-          onClose={() => setGalleryItems(null)} 
-        />
-      )}
-
-      {editingFailure && idToken && (
-        <EditFailureModal
-          failure={editingFailure}
-          idToken={idToken}
-          onClose={() => setEditingFailure(null)}
-          onSuccess={handleEditSuccess}
-          locoType={locoType}
-        />
-      )}
-
       {/* Desktop Table View */}
       <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full w-full table-fixed">
@@ -157,7 +152,7 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
             </tr>
           </thead>
           <tbody>
-            {sortedFailures.map((failure, index) => {
+            {items.map((failure, index) => {
               const failureDate = parseDateDDMMYY(failure.datefailed);
               const isEditable = failureDate && failureDate >= cutoffDate;
 
@@ -236,7 +231,7 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
-        {sortedFailures.map((failure, index) => {
+        {items.map((failure, index) => {
           const failureDate = parseDateDDMMYY(failure.datefailed);
           const isEditable = failureDate && failureDate >= cutoffDate;
 
@@ -323,8 +318,75 @@ const FailuresTable: React.FC<FailuresTableProps> = ({ failures, user, idToken, 
                  </div>
               </div>
             </div>
-          )
+          );
         })}
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {galleryItems && (
+        <MediaGalleryModal 
+          mediaItems={galleryItems} 
+          onClose={() => setGalleryItems(null)} 
+        />
+      )}
+
+      {editingFailure && idToken && (
+        <EditFailureModal
+          failure={editingFailure}
+          idToken={idToken}
+          onClose={() => setEditingFailure(null)}
+          onSuccess={handleEditSuccess}
+          locoType={locoType}
+        />
+      )}
+
+      <div className="space-y-4">
+        {/* ICMS Failures Collapsible Section */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+          <button
+            type="button"
+            onClick={() => setIsIcmsExpanded(!isIcmsExpanded)}
+            className="w-full text-base sm:text-lg font-bold p-3 sm:p-4 flex justify-between items-center bg-gray-100 hover:bg-gray-200 transition-colors text-brand-primary text-left"
+            aria-expanded={isIcmsExpanded}
+          >
+            <span>ICMS ({icmsFailures.length} {icmsFailures.length === 1 ? 'case' : 'cases'})</span>
+            <ChevronDownIcon className={`h-5 w-5 text-brand-primary transform transition-transform ${isIcmsExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {isIcmsExpanded && (
+            <div className="p-2 sm:p-4 border-t border-gray-200">
+              {sortedIcmsFailures.length === 0 ? (
+                <p className="text-text-secondary text-sm p-3 text-center">No ICMS failures found for this locomotive.</p>
+              ) : (
+                renderFailureTableAndCards(sortedIcmsFailures)
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Messages Collapsible Section */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+          <button
+            type="button"
+            onClick={() => setIsMessageExpanded(!isMessageExpanded)}
+            className="w-full text-base sm:text-lg font-bold p-3 sm:p-4 flex justify-between items-center bg-gray-100 hover:bg-gray-200 transition-colors text-brand-primary text-left"
+            aria-expanded={isMessageExpanded}
+          >
+            <span>Messages ({messageFailures.length} {messageFailures.length === 1 ? 'message' : 'messages'})</span>
+            <ChevronDownIcon className={`h-5 w-5 text-brand-primary transform transition-transform ${isMessageExpanded ? 'rotate-180' : ''}`} />
+          </button>
+          {isMessageExpanded && (
+            <div className="p-2 sm:p-4 border-t border-gray-200">
+              {sortedMessageFailures.length === 0 ? (
+                <p className="text-text-secondary text-sm p-3 text-center">No messages found for this locomotive.</p>
+              ) : (
+                renderFailureTableAndCards(sortedMessageFailures)
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
